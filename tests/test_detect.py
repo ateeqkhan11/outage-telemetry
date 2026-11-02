@@ -53,3 +53,20 @@ def test_auth_errors_prove_the_service_was_up():
         if r["network"] in ("github", "cloudflare") and r["service"] == "s3":
             r.update(ok=False, kind="client_error")          # e.g. our credentials expired on two networks
     assert minute_states(rs, CFG)[m(0)]["s3"] == "unknown"   # only gcp is usable: not enough to call it either way
+
+
+def test_rolling_rule_catches_a_partial_outage_the_minute_rule_misses():
+    import random
+    rolling = json.loads((Path(__file__).parent.parent / "trigger_v1_rolling.json").read_text())
+    rng = random.Random(1)
+    rs = []
+    for i in range(150):
+        t = f"2026-11-03T{12 + i // 60:02d}:{i % 60:02d}Z"
+        bad = 10 <= i < 140                                   # 130 minutes where half of all calls fail
+        for net in ("cloudflare", "gcp"):
+            for k in range(6):                                # 6 checks a minute, as the probes run
+                for r in recs(net, t, **({"lambda": rng.random() >= 0.5} if bad else {})):
+                    rs.append(dict(r, at=f"{t}{k}"))
+    longest = lambda cfg: max([e["duration_min"] for e in detect(rs, cfg)["region"]], default=0)
+    assert longest(CFG) < 60                                  # flickers: never reaches a 1-hour wait
+    assert longest(rolling) >= 120                            # seen as one outage

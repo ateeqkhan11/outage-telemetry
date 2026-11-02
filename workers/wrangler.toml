@@ -18,3 +18,4 @@ PROBE_TABLE = "outage-probe"
 PROBE_TABLE_KEY = '{"pk":{"S":"probe"}}'
 PROBE_FUNCTION = "outage-probe-hello"
 CONTROL_URL = "https://www.google.com/generate_204"
+PROBE_ROUNDS = "6"           # checks per service per minute (every 10 seconds)

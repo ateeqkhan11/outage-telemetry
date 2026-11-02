@@ -52,7 +52,9 @@ def probe_minute(network: str, checks: List[chk.Check], control: chk.Check, now:
 
 
 def run_minutes(network: str, minutes: int, store, key, checks: List[chk.Check], control: chk.Check,
-                wait: bool = True, clock: Callable[[], float] = time.time, sleep: Callable[[float], None] = time.sleep) -> int:
+                wait: bool = True, clock: Callable[[], float] = time.time, sleep: Callable[[float], None] = time.sleep,
+                rounds: int = 1) -> int:
+    """Probe for `minutes` minutes, `rounds` times a minute (evenly spaced), one stored object per minute."""
     head = json.loads(store.get(f"chains/{network}/head.json") or b"null") or {"seq": 0, "hash": GENESIS}
     seq, prev, written = head["seq"], head["hash"], 0
     for i in range(minutes):
@@ -60,11 +62,15 @@ def run_minutes(network: str, minutes: int, store, key, checks: List[chk.Check],
             sleep(60 - (clock() % 60) + 0.5)                 # start each round just after the minute boundary
         now = clock()
         sealed = []
-        for rec in probe_minute(network, checks, control, now):
-            seq += 1
-            r = seal(rec, prev, seq, key)
-            prev = r["hash"]
-            sealed.append(r)
+        for k in range(rounds):
+            if k:
+                sleep(max(0.0, now + k * 60 / rounds - clock()))
+            for rec in probe_minute(network, checks, control, clock() if k else now):
+                rec["minute"] = _iso(now, minute=True)        # every round in this minute belongs to it
+                seq += 1
+                r = seal(rec, prev, seq, key)
+                prev = r["hash"]
+                sealed.append(r)
         day, hhmm = _iso(now)[:10], _iso(now)[11:16].replace(":", "")
         name = f"runs/{network}/{day}/{hhmm}.jsonl"
         if store.get(name) is not None:                      # never overwrite; can only happen if runs overlap
@@ -73,7 +79,7 @@ def run_minutes(network: str, minutes: int, store, key, checks: List[chk.Check],
         store.put(f"chains/{network}/head.json", json.dumps({"seq": seq, "hash": prev, "at": _iso(now)}).encode())
         written += len(sealed)
         failed = [f"{r['service']}" for r in sealed if not r["ok"]]
-        print(f"{_iso(now)} {network}: {len(sealed)} checks, {'failed: ' + ', '.join(failed) if failed else 'all ok'}", flush=True)
+        print(f"{_iso(now)} {network}: {len(sealed)} checks, {'failed: ' + ', '.join(sorted(set(failed))) if failed else 'all ok'}", flush=True)
     return written
 
 
@@ -83,12 +89,14 @@ def main(argv: Optional[List[str]] = None) -> None:
     ap.add_argument("--minutes", type=int, default=1)
     ap.add_argument("--local", help="write to this folder instead of R2")
     ap.add_argument("--no-wait", action="store_true", help="probe immediately instead of on minute boundaries")
+    ap.add_argument("--rounds", type=int, default=int(os.environ.get("PROBE_ROUNDS", "6")),
+                    help="checks per service per minute, evenly spaced (default 6, every 10 seconds)")
     a = ap.parse_args(argv)
     seed = os.environ.get("PROBE_SIGNING_KEY")
     if not seed:
         raise SystemExit("PROBE_SIGNING_KEY is not set (make one with: python scripts/genkey.py --network NAME)")
     run_minutes(a.network, a.minutes, open_store(a.local), load_private(seed), chk.aws_checks(), chk.control_check(),
-                wait=not a.no_wait)
+                wait=not a.no_wait, rounds=max(1, a.rounds))
 
 
 if __name__ == "__main__":

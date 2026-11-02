@@ -20,4 +20,4 @@ app = func.FunctionApp()
 @app.timer_trigger(schedule="0 * * * * *", arg_name="timer", run_on_startup=False, use_monitor=False)
 def probe_minute(timer: func.TimerRequest) -> None:
     run_minutes("azure", 1, R2Store(), load_private(os.environ["PROBE_SIGNING_KEY"]), chk.aws_checks(), chk.control_check(),
-                wait=False)
+                wait=False, rounds=int(os.environ.get("PROBE_ROUNDS", "6")))

@@ -1,0 +1,1151 @@
+{
+  "method": "Backtest: how would trigger v1 have handled past AWS us-east-1 outages?\n\n  python -m backtest.backtest            # writes backtest/results.json and prints a summary\n\nOur probes didn't exist during these events, and AWS never publishes per-API error rates, only service-level\ndescriptions (\"largely unavailable\", \"elevated error rates\"). So for each event we simulate what three independent\nprobe operators would have seen, minute by minute, and run those records through the real detection code\n(probe/detect.py) with both draft rules:\n\n  minute   trigger_v1.json, 1 check a minute (the draft as planned): a service-minute is down when 2 operators'\n           checks fail that minute\n  rolling  trigger_v1_rolling.json, 6 checks a minute (recommended): an operator fails a service when 10% of its\n           checks in the last 10 minutes failed\n\nFailure rates per check, by how the AWS summary describes the service (two scenarios, because \"partial\" is vague):\n  largely unavailable 95%;  very high errors 55%;  partial 20% (low) or 50% (high);  latency only 5% or 20%.\nOutside the impaired window each check fails 0.05% of the time (background noise). GitHub's network misses 15% of\nminutes (late schedules). Each combination is run 30 times with different random draws.\n",
+  "rates": {
+    "largely": [
+      0.95,
+      0.95
+    ],
+    "very_high": [
+      0.55,
+      0.55
+    ],
+    "partial": [
+      0.2,
+      0.5
+    ],
+    "latency": [
+      0.05,
+      0.2
+    ]
+  },
+  "runs": 30,
+  "events": [
+    {
+      "id": "2011-04-21",
+      "title": "Amazon EC2 and Amazon RDS Service Disruption in the US East Region (EBS re-mirroring storm)",
+      "scope": "single-AZ",
+      "start_utc": "2011-04-21T07:47:00Z",
+      "end_utc": "2011-04-24T01:15:00Z",
+      "duration_min": 3928,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/65648/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "ec2",
+          "start": "2011-04-21T07:50Z",
+          "end": "2011-04-21T19:00Z",
+          "class": "partial",
+          "note": ""
+        }
+      ],
+      "not_counted": [],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 0.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 6,
+          "longest_event_min_range": [
+            4,
+            10
+          ],
+          "down_minutes_median": 63,
+          "events_median": 47
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 671,
+          "longest_event_min_range": [
+            399,
+            675
+          ],
+          "down_minutes_median": 670,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 0.1,
+            "120": 0.0
+          },
+          "longest_event_min_median": 45,
+          "longest_event_min_range": [
+            27,
+            67
+          ],
+          "down_minutes_median": 308,
+          "events_median": 49
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 677,
+          "longest_event_min_range": [
+            676,
+            678
+          ],
+          "down_minutes_median": 677,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2012-06-29",
+      "title": "AWS Service Event in the US East Region (derecho storm power loss)",
+      "scope": "single-AZ",
+      "start_utc": "2012-06-30T03:04:00Z",
+      "end_utc": "2012-06-30T09:45:00Z",
+      "duration_min": 401,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/67457/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "ec2",
+          "start": "2012-06-30T03:04Z",
+          "end": "2012-06-30T04:10Z",
+          "class": "largely",
+          "note": ""
+        }
+      ],
+      "not_counted": [],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 67,
+          "longest_event_min_range": [
+            66,
+            67
+          ],
+          "down_minutes_median": 66,
+          "events_median": 1
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 76,
+          "longest_event_min_range": [
+            74,
+            76
+          ],
+          "down_minutes_median": 76,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 67,
+          "longest_event_min_range": [
+            66,
+            67
+          ],
+          "down_minutes_median": 66,
+          "events_median": 1
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 76,
+          "longest_event_min_range": [
+            75,
+            76
+          ],
+          "down_minutes_median": 76,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2012-10-22",
+      "title": "AWS Service Event in the US-East Region (EBS stuck volumes)",
+      "scope": "single-AZ",
+      "start_utc": "2012-10-22T17:00:00Z",
+      "end_utc": "2012-10-22T23:15:00Z",
+      "duration_min": 375,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/680342/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "ec2",
+          "start": "2012-10-22T19:06Z",
+          "end": "2012-10-22T21:33Z",
+          "class": "partial",
+          "note": ""
+        }
+      ],
+      "not_counted": [],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 0.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 4,
+          "longest_event_min_range": [
+            1,
+            15
+          ],
+          "down_minutes_median": 14,
+          "events_median": 10
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 148,
+          "longest_event_min_range": [
+            144,
+            153
+          ],
+          "down_minutes_median": 148,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 0.03333333333333333,
+            "120": 0.0
+          },
+          "longest_event_min_median": 26,
+          "longest_event_min_range": [
+            16,
+            64
+          ],
+          "down_minutes_median": 66,
+          "events_median": 12
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 155,
+          "longest_event_min_range": [
+            152,
+            155
+          ],
+          "down_minutes_median": 155,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2012-12-24",
+      "title": "Amazon ELB Service Event in the US-East Region",
+      "scope": "regional",
+      "start_utc": "2012-12-24T20:24:00Z",
+      "end_utc": "2012-12-25T20:05:00Z",
+      "duration_min": 1421,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/680587/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [],
+      "not_counted": [],
+      "results": {}
+    },
+    {
+      "id": "2014-06-13",
+      "title": "Amazon SimpleDB Service Disruption (US East)",
+      "scope": "regional",
+      "start_utc": "2014-06-14T04:16:00Z",
+      "end_utc": "2014-06-14T08:30:00Z",
+      "duration_min": 254,
+      "confidence": "medium",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/65649/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [],
+      "not_counted": [],
+      "results": {}
+    },
+    {
+      "id": "2015-09-20",
+      "title": "Amazon DynamoDB Service Disruption and Related Impacts in the US-East Region",
+      "scope": "regional",
+      "start_utc": "2015-09-20T09:15:00Z",
+      "end_utc": "2015-09-20T17:52:00Z",
+      "duration_min": 517,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/5467D2/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "dynamodb",
+          "start": "2015-09-20T09:19Z",
+          "end": "2015-09-20T14:10Z",
+          "class": "very_high",
+          "note": ""
+        }
+      ],
+      "not_counted": [],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 0.16666666666666666,
+            "120": 0.0
+          },
+          "longest_event_min_median": 41,
+          "longest_event_min_range": [
+            28,
+            89
+          ],
+          "down_minutes_median": 154,
+          "events_median": 17
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 298,
+          "longest_event_min_range": [
+            297,
+            299
+          ],
+          "down_minutes_median": 298,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 0.23333333333333334,
+            "120": 0.0
+          },
+          "longest_event_min_median": 46,
+          "longest_event_min_range": [
+            24,
+            86
+          ],
+          "down_minutes_median": 159,
+          "events_median": 16
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 299,
+          "longest_event_min_range": [
+            297,
+            299
+          ],
+          "down_minutes_median": 299,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2017-02-28",
+      "title": "Amazon S3 Service Disruption in the Northern Virginia (US-EAST-1) Region",
+      "scope": "regional",
+      "start_utc": "2017-02-28T17:37:00Z",
+      "end_utc": "2017-02-28T21:54:00Z",
+      "duration_min": 257,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/41926/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "s3",
+          "start": "2017-02-28T17:37Z",
+          "end": "2017-02-28T21:18Z",
+          "class": "largely",
+          "note": ""
+        },
+        {
+          "check": "lambda",
+          "start": "2017-02-28T17:37Z",
+          "end": "2017-02-28T21:18Z",
+          "class": "partial",
+          "note": "AWS says Lambda was impacted while S3 was down, with no window; we assume S3's window"
+        }
+      ],
+      "not_counted": [
+        {
+          "check": "ec2",
+          "reason": "New instance launches (RunInstances) failed; our check is DescribeInstances"
+        }
+      ],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 222,
+          "longest_event_min_range": [
+            221,
+            222
+          ],
+          "down_minutes_median": 217,
+          "events_median": 1
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 231,
+          "longest_event_min_range": [
+            230,
+            231
+          ],
+          "down_minutes_median": 231,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 222,
+          "longest_event_min_range": [
+            222,
+            222
+          ],
+          "down_minutes_median": 219,
+          "events_median": 1
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 231,
+          "longest_event_min_range": [
+            229,
+            231
+          ],
+          "down_minutes_median": 231,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2018-05-31",
+      "title": "EC2/EBS power event in a single US-EAST-1 Availability Zone (no PES)",
+      "scope": "single-AZ",
+      "start_utc": "2018-05-31T21:52:00Z",
+      "end_utc": "2018-05-31T23:29:00Z",
+      "duration_min": 97,
+      "confidence": "medium",
+      "secondary_source_only": true,
+      "sources": [
+        "https://www.theregister.com/2018/06/01/aws_outage/"
+      ],
+      "checks_impaired": [],
+      "not_counted": [],
+      "results": {}
+    },
+    {
+      "id": "2019-08-31",
+      "title": "Power failure in one US-EAST-1 datacenter (single AZ), EBS data loss (no PES)",
+      "scope": "single-AZ",
+      "start_utc": "2019-08-31T11:33:00Z",
+      "end_utc": "2019-08-31T19:30:00Z",
+      "duration_min": 477,
+      "confidence": "medium",
+      "secondary_source_only": true,
+      "sources": [
+        "https://www.theregister.com/2019/09/04/aws_server_outage/"
+      ],
+      "checks_impaired": [],
+      "not_counted": [],
+      "results": {}
+    },
+    {
+      "id": "2020-11-25",
+      "title": "Amazon Kinesis Event in the Northern Virginia (US-EAST-1) Region",
+      "scope": "regional",
+      "start_utc": "2020-11-25T13:15:00Z",
+      "end_utc": "2020-11-26T06:31:00Z",
+      "duration_min": 1036,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/11201/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "lambda",
+          "start": "2020-11-25T14:15Z",
+          "end": "2020-11-25T18:36Z",
+          "class": "partial",
+          "note": ""
+        }
+      ],
+      "not_counted": [],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 0.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 5,
+          "longest_event_min_range": [
+            3,
+            11
+          ],
+          "down_minutes_median": 24,
+          "events_median": 18
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 263,
+          "longest_event_min_range": [
+            259,
+            267
+          ],
+          "down_minutes_median": 263,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 0.03333333333333333,
+            "120": 0.0
+          },
+          "longest_event_min_median": 30,
+          "longest_event_min_range": [
+            19,
+            62
+          ],
+          "down_minutes_median": 117,
+          "events_median": 20
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 268,
+          "longest_event_min_range": [
+            267,
+            269
+          ],
+          "down_minutes_median": 268,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2021-12-07",
+      "title": "AWS Service Event in the Northern Virginia (US-EAST-1) Region (internal network congestion)",
+      "scope": "regional",
+      "start_utc": "2021-12-07T15:30:00Z",
+      "end_utc": "2021-12-08T02:40:00Z",
+      "duration_min": 670,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/12721/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "ec2",
+          "start": "2021-12-07T15:33Z",
+          "end": "2021-12-07T22:40Z",
+          "class": "partial",
+          "note": ""
+        },
+        {
+          "check": "sts",
+          "start": "2021-12-07T15:30Z",
+          "end": "2021-12-08T00:28Z",
+          "class": "latency",
+          "note": "Federation latency only; GetCallerIdentity probably mostly worked; start not stated"
+        }
+      ],
+      "not_counted": [],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 0.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 6,
+          "longest_event_min_range": [
+            4,
+            13
+          ],
+          "down_minutes_median": 46,
+          "events_median": 33
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 429,
+          "longest_event_min_range": [
+            335,
+            432
+          ],
+          "down_minutes_median": 429,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 0.16666666666666666,
+            "120": 0.0
+          },
+          "longest_event_min_median": 43,
+          "longest_event_min_range": [
+            27,
+            84
+          ],
+          "down_minutes_median": 229,
+          "events_median": 35
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 540,
+          "longest_event_min_range": [
+            535,
+            543
+          ],
+          "down_minutes_median": 540,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2021-12-22",
+      "title": "Power loss in a single datacenter in USE1-AZ4 (no PES)",
+      "scope": "single-AZ",
+      "start_utc": "2021-12-22T12:35:00Z",
+      "end_utc": null,
+      "duration_min": null,
+      "confidence": "medium",
+      "secondary_source_only": true,
+      "sources": [
+        "https://puck.nether.net/pipermail/outages-discussion/2021-December/002163.html",
+        "https://www.theregister.com/2021/12/22/aws_outage/"
+      ],
+      "checks_impaired": [],
+      "not_counted": [
+        {
+          "check": "ec2",
+          "reason": "Launches in one availability zone only; DescribeInstances is regional"
+        }
+      ],
+      "results": {}
+    },
+    {
+      "id": "2023-06-13",
+      "title": "AWS Lambda Service Event in Northern Virginia (US-EAST-1) Region",
+      "scope": "regional",
+      "start_utc": "2023-06-13T18:49:00Z",
+      "end_utc": "2023-06-13T22:37:00Z",
+      "duration_min": 228,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/061323/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "lambda",
+          "start": "2023-06-13T18:49Z",
+          "end": "2023-06-13T22:37Z",
+          "class": "partial",
+          "note": ""
+        },
+        {
+          "check": "sts",
+          "start": "2023-06-13T18:49Z",
+          "end": "2023-06-13T21:10Z",
+          "class": "partial",
+          "note": ""
+        }
+      ],
+      "not_counted": [],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 0.0,
+            "120": 0.0
+          },
+          "longest_event_min_median": 7,
+          "longest_event_min_range": [
+            4,
+            16
+          ],
+          "down_minutes_median": 31,
+          "events_median": 19
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 230,
+          "longest_event_min_range": [
+            228,
+            233
+          ],
+          "down_minutes_median": 230,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 0.7,
+            "120": 0.1
+          },
+          "longest_event_min_median": 72,
+          "longest_event_min_range": [
+            42,
+            148
+          ],
+          "down_minutes_median": 136,
+          "events_median": 10
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 236,
+          "longest_event_min_range": [
+            234,
+            236
+          ],
+          "down_minutes_median": 236,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2024-07-30",
+      "title": "Amazon Kinesis Data Streams Service Event in Northern Virginia (US-EAST-1) Region",
+      "scope": "regional",
+      "start_utc": "2024-07-30T21:45:00Z",
+      "end_utc": "2024-07-31T04:37:00Z",
+      "duration_min": 412,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/073024/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [],
+      "not_counted": [
+        {
+          "check": "lambda",
+          "reason": "Only functions that block on logging were affected; our function doesn't"
+        }
+      ],
+      "results": {}
+    },
+    {
+      "id": "2025-10-20",
+      "title": "Amazon DynamoDB Service Disruption in the Northern Virginia (US-EAST-1) Region (DNS race condition)",
+      "scope": "regional",
+      "start_utc": "2025-10-20T06:48:00Z",
+      "end_utc": "2025-10-20T21:20:00Z",
+      "duration_min": 872,
+      "confidence": "high",
+      "secondary_source_only": false,
+      "sources": [
+        "https://aws.amazon.com/message/101925/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "checks_impaired": [
+        {
+          "check": "dynamodb",
+          "start": "2025-10-20T06:48Z",
+          "end": "2025-10-20T09:40Z",
+          "class": "largely",
+          "note": ""
+        },
+        {
+          "check": "lambda",
+          "start": "2025-10-20T06:51Z",
+          "end": "2025-10-20T21:15Z",
+          "class": "partial",
+          "note": ""
+        },
+        {
+          "check": "ec2",
+          "start": "2025-10-20T06:48Z",
+          "end": "2025-10-20T20:50Z",
+          "class": "partial",
+          "note": ""
+        },
+        {
+          "check": "sts",
+          "start": "2025-10-20T06:51Z",
+          "end": "2025-10-20T16:59Z",
+          "class": "partial",
+          "note": ""
+        }
+      ],
+      "not_counted": [],
+      "results": {
+        "minute/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 175,
+          "longest_event_min_range": [
+            173,
+            188
+          ],
+          "down_minutes_median": 325,
+          "events_median": 71
+        },
+        "rolling/low": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 872,
+          "longest_event_min_range": [
+            871,
+            875
+          ],
+          "down_minutes_median": 872,
+          "events_median": 1
+        },
+        "minute/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 369,
+          "longest_event_min_range": [
+            260,
+            636
+          ],
+          "down_minutes_median": 706,
+          "events_median": 9
+        },
+        "rolling/high": {
+          "p_meets": {
+            "60": 1.0,
+            "120": 1.0
+          },
+          "longest_event_min_median": 875,
+          "longest_event_min_range": [
+            874,
+            876
+          ],
+          "down_minutes_median": 875,
+          "events_median": 1
+        }
+      }
+    },
+    {
+      "id": "2026-05-07",
+      "title": "Thermal (cooling) event in a use1-az4 datacenter, EC2/EBS power loss (no PES found)",
+      "scope": "single-AZ",
+      "start_utc": "2026-05-07T23:20:00Z",
+      "end_utc": "2026-05-08T20:50:00Z",
+      "duration_min": 1290,
+      "confidence": "low",
+      "secondary_source_only": true,
+      "sources": [
+        "https://finance.yahoo.com/markets/crypto/articles/aws-data-center-outage-knocks-115048854.html",
+        "https://www.itpro.com/infrastructure/aws-outage-explained-may-2026-data-center-overheating",
+        "https://www.datacenterdynamics.com/en/news/aws-experiences-power-issues-at-northern-virginia-cloud-region/",
+        "https://tech-insider.org/aws-outage-us-east-1-2026/",
+        "https://www.singlestore.com/blog/aws-outage-may-2026-cross-region-disaster-recovery/"
+      ],
+      "checks_impaired": [],
+      "not_counted": [],
+      "results": {}
+    }
+  ],
+  "false_positives": {
+    "Microsoft-only problem for 3 hours (GitHub and Azure both fail, Cloudflare fine)": {
+      "minute": 0,
+      "rolling": 0
+    },
+    "One probe network loses its internet for 3 hours": {
+      "minute": 0,
+      "rolling": 0
+    },
+    "Our AWS credentials expire on every network (AWS answers 403)": {
+      "minute": 0,
+      "rolling": 0
+    },
+    "Real outage seen by two operators for 3 hours (control)": {
+      "minute": 180,
+      "rolling": 180
+    }
+  },
+  "sensitivity": {
+    "10%/low": {
+      "2011-04-21": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2012-06-29": {
+        "60": 1.0,
+        "120": 0.0
+      },
+      "2012-10-22": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2015-09-20": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2017-02-28": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2020-11-25": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2021-12-07": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2023-06-13": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2025-10-20": {
+        "60": 1.0,
+        "120": 1.0
+      }
+    },
+    "10%/high": {
+      "2011-04-21": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2012-06-29": {
+        "60": 1.0,
+        "120": 0.0
+      },
+      "2012-10-22": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2015-09-20": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2017-02-28": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2020-11-25": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2021-12-07": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2023-06-13": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2025-10-20": {
+        "60": 1.0,
+        "120": 1.0
+      }
+    },
+    "25%/low": {
+      "2011-04-21": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2012-06-29": {
+        "60": 1.0,
+        "120": 0.0
+      },
+      "2012-10-22": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2015-09-20": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2017-02-28": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2020-11-25": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2021-12-07": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2023-06-13": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2025-10-20": {
+        "60": 1.0,
+        "120": 1.0
+      }
+    },
+    "25%/high": {
+      "2011-04-21": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2012-06-29": {
+        "60": 1.0,
+        "120": 0.0
+      },
+      "2012-10-22": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2015-09-20": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2017-02-28": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2020-11-25": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2021-12-07": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2023-06-13": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2025-10-20": {
+        "60": 1.0,
+        "120": 1.0
+      }
+    },
+    "50%/low": {
+      "2011-04-21": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2012-06-29": {
+        "60": 1.0,
+        "120": 0.0
+      },
+      "2012-10-22": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2015-09-20": {
+        "60": 1.0,
+        "120": 0.8666666666666667
+      },
+      "2017-02-28": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2020-11-25": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2021-12-07": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2023-06-13": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2025-10-20": {
+        "60": 1.0,
+        "120": 1.0
+      }
+    },
+    "50%/high": {
+      "2011-04-21": {
+        "60": 0.3333333333333333,
+        "120": 0.06666666666666667
+      },
+      "2012-06-29": {
+        "60": 1.0,
+        "120": 0.0
+      },
+      "2012-10-22": {
+        "60": 0.0,
+        "120": 0.0
+      },
+      "2015-09-20": {
+        "60": 1.0,
+        "120": 0.7333333333333333
+      },
+      "2017-02-28": {
+        "60": 1.0,
+        "120": 1.0
+      },
+      "2020-11-25": {
+        "60": 0.06666666666666667,
+        "120": 0.0
+      },
+      "2021-12-07": {
+        "60": 0.2,
+        "120": 0.0
+      },
+      "2023-06-13": {
+        "60": 0.7333333333333333,
+        "120": 0.06666666666666667
+      },
+      "2025-10-20": {
+        "60": 1.0,
+        "120": 1.0
+      }
+    }
+  }
+}

@@ -1,0 +1,902 @@
+{
+  "events": [
+    {
+      "id": "2011-04-21",
+      "title": "Amazon EC2 and Amazon RDS Service Disruption in the US East Region (EBS re-mirroring storm)",
+      "scope": "single-AZ",
+      "scope_reason": "Volume/instance impact confined to one AZ, but the EBS control plane degraded API calls across the whole region for some hours.",
+      "tz_source": "PDT",
+      "start_utc": "2011-04-21T07:47:00Z",
+      "end_utc": "2011-04-24T01:15:00Z",
+      "end_note": "End = 6:15 PM PDT Apr 23, when EBS API access was restored in the affected AZ. Volume recovery went on through Apr 24 and later; 0.07% of volumes were never recovered in a consistent state.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Mentioned only as the snapshot destination; no impairment stated"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "DynamoDB did not exist yet (launched Jan 2012); not applicable"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Lambda did not exist yet (launched Nov 2014); not applicable"
+        },
+        "ec2_api": {
+          "impaired": true,
+          "start_utc": "2011-04-21T07:50:00Z",
+          "end_utc": "2011-04-21T19:00:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Region-wide EBS API errors and latency 12:50-2:40 AM PDT (07:50-09:40Z), then again from about 5:30 AM (12:30Z) until 8:20 AM PDT (15:20Z). Launch errors in other AZs ran until noon PDT (19:00Z). Control-plane API access for the affected AZ stayed disabled until 01:15Z Apr 24. DescribeInstances is not specifically named."
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "An incorrectly executed network configuration change moved primary EBS traffic onto the low-capacity redundant network. That triggered a re-mirroring storm that left many volumes in one AZ stuck and overloaded the regional EBS control plane.",
+      "sources": [
+        "https://aws.amazon.com/message/65648/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 3928,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2012-06-29",
+      "title": "AWS Service Event in the US East Region (derecho storm power loss)",
+      "scope": "single-AZ",
+      "scope_reason": "Power was lost in one datacenter in one AZ. The region-wide control plane (launch/create/attach) was unavailable for about 66 minutes.",
+      "tz_source": "PDT",
+      "start_utc": "2012-06-30T03:04:00Z",
+      "end_utc": "2012-06-30T09:45:00Z",
+      "end_note": "Start = servers lost power at 8:04 PM PDT Jun 29. The first voltage spike was at 7:24 PM PDT (02:24Z). There is no single stated end. 09:45Z = 2:45 AM PDT Jun 30, when 90% of outstanding EBS volumes were returned; the rest of the backlog took longer. Most EC2 instances were back between 11:15 PM and just after midnight PDT (06:15-07:xxZ).",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned (DynamoDB existed)"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Lambda did not exist yet (launched Nov 2014); not applicable"
+        },
+        "ec2_api": {
+          "impaired": true,
+          "start_utc": "2012-06-30T03:04:00Z",
+          "end_utc": "2012-06-30T04:10:00Z",
+          "severity": "largely unavailable",
+          "note": "Region-wide: customers could not launch EC2 instances, create EBS volumes or attach volumes in any AZ from 8:04 to 9:10 PM PDT. DescribeInstances is not specifically named."
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "During a severe electrical storm, generators in one datacenter failed to provide stable voltage. The facility ran on UPS until it was depleted and the servers lost power.",
+      "sources": [
+        "https://aws.amazon.com/message/67457/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 401,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2012-10-22",
+      "title": "AWS Service Event in the US-East Region (EBS stuck volumes)",
+      "scope": "single-AZ",
+      "scope_reason": "EBS volumes in one of the five US-East AZs were affected. Aggressive EC2 API throttling during the event also affected customers in other AZs.",
+      "tz_source": "PDT",
+      "start_utc": "2012-10-22T17:00:00Z",
+      "end_utc": "2012-10-22T23:15:00Z",
+      "end_note": "End = 4:15 PM PDT, when nearly all affected EBS volumes were restored. Single-AZ RDS was mostly restored by 6:35 PM PDT (01:35Z Oct 23). The ELB Elastic IP shortage was remediated by 9:50 PM PDT (04:50Z Oct 23).",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Lambda did not exist yet (launched Nov 2014); not applicable"
+        },
+        "ec2_api": {
+          "impaired": true,
+          "start_utc": "2012-10-22T19:06:00Z",
+          "end_utc": "2012-10-22T21:33:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Aggressive API throttling, with Describe calls heavily throttled, from 12:06 PM to 2:33 PM PDT, when it was reduced considerably. Most relevant historical analogue for DescribeInstances."
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "A latent memory-leak bug in an EBS storage-server data-collection agent, triggered by an incompletely propagated DNS change, caused storage servers in one AZ to fail.",
+      "sources": [
+        "https://aws.amazon.com/message/680342/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 375,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2012-12-24",
+      "title": "Amazon ELB Service Event in the US-East Region",
+      "scope": "regional",
+      "scope_reason": "The ELB control plane and state data for the region were affected, impairing 6.8% of running load balancers at peak. No single AZ is named.",
+      "tz_source": "PST",
+      "start_utc": "2012-12-24T20:24:00Z",
+      "end_utc": "2012-12-25T20:05:00Z",
+      "end_note": "End = 12:05 PM PST, which context places on Dec 25 (the date is not explicitly written).",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Lambda did not exist yet (launched Nov 2014); not applicable"
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned; only ELB APIs and control plane affected"
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "A maintenance process was inadvertently run against production ELB state data and deleted part of it.",
+      "sources": [
+        "https://aws.amazon.com/message/680587/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 1421,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2014-06-13",
+      "title": "Amazon SimpleDB Service Disruption (US East)",
+      "scope": "regional",
+      "scope_reason": "SimpleDB in US East was unavailable to all API calls. The trigger was power loss in one datacenter.",
+      "tz_source": "PDT",
+      "start_utc": "2014-06-14T04:16:00Z",
+      "end_utc": "2014-06-14T08:30:00Z",
+      "end_note": "Fully unavailable 9:16-11:16 PM PDT (04:16-06:16Z). Elevated CreateDomain/DeleteDomain errors until 1:30 AM (08:30Z, time zone implied PDT). The PES shows no year; 2014 comes from the PES index.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned (SimpleDB is a separate service)"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Lambda did not exist yet (launched Nov 2014); not applicable"
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "Power loss to servers in one datacenter took several SimpleDB storage nodes offline at once. The resulting lock-service load caused handshake timeouts, and nodes removed themselves from the cluster.",
+      "sources": [
+        "https://aws.amazon.com/message/65649/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "medium",
+      "duration_min": 254,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2015-09-20",
+      "title": "Amazon DynamoDB Service Disruption and Related Impacts in the US-East Region",
+      "scope": "regional",
+      "scope_reason": "The DynamoDB storage/metadata service for the region was affected, with knock-on impact to SQS, Auto Scaling, CloudWatch and console logins.",
+      "tz_source": "PDT",
+      "start_utc": "2015-09-20T09:15:00Z",
+      "end_utc": "2015-09-20T17:52:00Z",
+      "end_note": "09:15Z = 2:15 AM PDT, when Auto Scaling API faults began (as the PES states). DynamoDB itself was affected from 2:19 AM (09:19Z) to 7:10 AM PDT (14:10Z, 291 min). 17:52Z = 10:52 AM PDT, when the Auto Scaling backlog cleared. Low residual DynamoDB errors (0.15-0.25%) continued until Monday.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": true,
+          "start_utc": "2015-09-20T09:19:00Z",
+          "end_utc": "2015-09-20T14:10:00Z",
+          "severity": "error rates elevated but partially working (very high)",
+          "note": "Error rate about 55% by 2:37 AM PDT. Metadata requests paused 5:06 AM and traffic disabled 5:45 AM PDT, so likely near-unavailable roughly 12:45-14:10Z (inferred, not stated). Restored for most customers 7:10 AM PDT."
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned (Lambda existed)"
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "EC2 Auto Scaling API faults 09:15-14:10Z; EC2 DescribeInstances not mentioned"
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned; console logins slowed 12:45-14:10Z"
+        }
+      },
+      "root_cause": "Rapid Global Secondary Index adoption enlarged membership data until metadata-service responses exceeded storage servers' timeouts, which caused a retry storm that overloaded the metadata service.",
+      "sources": [
+        "https://aws.amazon.com/message/5467D2/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 517,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2017-02-28",
+      "title": "Amazon S3 Service Disruption in the Northern Virginia (US-EAST-1) Region",
+      "scope": "regional",
+      "scope_reason": "The S3 index and placement subsystems for the whole region were restarted. Dependent services (EC2 launches, EBS from snapshots, Lambda) were affected.",
+      "tz_source": "PST",
+      "start_utc": "2017-02-28T17:37:00Z",
+      "end_utc": "2017-02-28T21:54:00Z",
+      "end_note": "End = 1:54 PM PST, when the placement subsystem recovered and S3 was fully normal. Recovery of some dependent services continued afterwards (no time given).",
+      "services": {
+        "s3": {
+          "impaired": true,
+          "start_utc": "2017-02-28T17:37:00Z",
+          "end_utc": "2017-02-28T21:18:00Z",
+          "severity": "largely unavailable",
+          "note": "GET/LIST largely unavailable until partially restored at 12:26 PM PST (20:26Z), fully at 1:18 PM PST (21:18Z). PUT recovered at 1:54 PM PST (21:54Z)."
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": true,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "PES says Lambda was impacted while S3 APIs were unavailable; no window given, presumably about 17:37-21:18Z (inferred)."
+        },
+        "ec2_api": {
+          "impaired": true,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "New EC2 instance launches impacted (RunInstances, not DescribeInstances); no window given."
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "A mistyped input to an operational capacity-removal command took far more S3 index and placement servers offline than intended, so those subsystems needed a full restart.",
+      "sources": [
+        "https://aws.amazon.com/message/41926/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 257,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2018-05-31",
+      "title": "EC2/EBS power event in a single US-EAST-1 Availability Zone (no PES)",
+      "scope": "single-AZ",
+      "scope_reason": "AWS said a small percentage of EC2 servers lost power in one datacenter of a single AZ.",
+      "tz_source": "PDT",
+      "start_utc": "2018-05-31T21:52:00Z",
+      "end_utc": "2018-05-31T23:29:00Z",
+      "end_note": "AMBIGUOUS END. Power was restored at 3:22 PM PDT (22:22Z), and power was back for the vast majority of instances by 4:29 PM PDT (23:29Z). There is no stated completion time, and some instances on damaged hardware stayed down. Duration is a lower bound.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Instances and EBS volumes impaired in one AZ; no EC2 API impairment stated"
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "A power event in one datacenter of a single US-EAST-1 AZ cut power to some EC2 servers and networking devices.",
+      "sources": [
+        "https://www.theregister.com/2018/06/01/aws_outage/"
+      ],
+      "confidence": "medium",
+      "secondary_source_only": true,
+      "duration_min": 97
+    },
+    {
+      "id": "2019-08-31",
+      "title": "Power failure in one US-EAST-1 datacenter (single AZ), EBS data loss (no PES)",
+      "scope": "single-AZ",
+      "scope_reason": "Utility and then generator power failed at one of ten datacenters in one of six AZs. 7.5% of EC2 instances and EBS volumes in that AZ were affected.",
+      "tz_source": "PDT",
+      "start_utc": "2019-08-31T11:33:00Z",
+      "end_utc": "2019-08-31T19:30:00Z",
+      "end_note": "AMBIGUOUS. Utility power failed 4:33 AM PDT, and generators failed about 6:00 AM (13:00Z), so customer impact may have begun about 13:00Z (instances failed by 6:10 AM). Power restored 7:45 AM (14:45Z). 99% of instances recovered by 10:45 AM (17:45Z), with 0.5% still impaired at 12:30 PM PDT (19:30Z). Some volumes were unrecoverable.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "AWS said new launches in the affected AZ worked normally; DescribeInstances not mentioned"
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "Utility power failed at one datacenter, and the backup generators failed about 90 minutes later, so EC2 and EBS hardware lost power.",
+      "sources": [
+        "https://www.theregister.com/2019/09/04/aws_server_outage/"
+      ],
+      "confidence": "medium",
+      "secondary_source_only": true,
+      "duration_min": 477
+    },
+    {
+      "id": "2020-11-25",
+      "title": "Amazon Kinesis Event in the Northern Virginia (US-EAST-1) Region",
+      "scope": "regional",
+      "scope_reason": "The regional Kinesis front-end fleet failed, with knock-on effects on Cognito, CloudWatch, EventBridge, Lambda and Auto Scaling.",
+      "tz_source": "PST",
+      "start_utc": "2020-11-25T13:15:00Z",
+      "end_utc": "2020-11-26T06:31:00Z",
+      "end_note": "Start = 5:15 AM PST, when the first alarms fired (the capacity add began 2:44 AM). End = 10:31 PM PST, when CloudWatch fully recovered. Kinesis was fully normal at 10:23 PM PST per the PES. The PES timeline shows Kinesis errors falling from about noon, so 10:23 PM is as written; a reader flagged a possible AM/PM typo, but PM is consistent with the CloudWatch 10:31 PM recovery.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Mentioned only as a config source; no impairment stated"
+        },
+        "lambda": {
+          "impaired": true,
+          "start_utc": "2020-11-25T14:15:00Z",
+          "end_utc": "2020-11-25T18:36:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated invocation errors from metric-buffering memory contention, 6:15 AM-10:36 AM PST."
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned (reactive Auto Scaling delayed until 01:47Z Nov 26)"
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned (Cognito credential issuance impaired until 22:18Z)"
+        }
+      },
+      "root_cause": "New Kinesis front-end capacity pushed every server in the fleet past the operating-system thread limit while it built its shard map, so front-end servers could not route requests.",
+      "sources": [
+        "https://aws.amazon.com/message/11201/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 1036,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2021-12-07",
+      "title": "AWS Service Event in the Northern Virginia (US-EAST-1) Region (internal network congestion)",
+      "scope": "regional",
+      "scope_reason": "Congestion in the internal network linking to the main AWS network affected control planes and services across the region.",
+      "tz_source": "PST",
+      "start_utc": "2021-12-07T15:30:00Z",
+      "end_utc": "2021-12-08T02:40:00Z",
+      "end_note": "Trigger 7:30 AM PST. Customer errors began 7:33 AM (15:33Z). Network devices fully recovered 2:22 PM PST (22:22Z, 412 min from trigger). The overall end used here is 6:40 PM PST (02:40Z Dec 8), when the EventBridge latency tail ended. Use 22:22Z if you want only the core network impairment.",
+      "services": {
+        "s3": {
+          "impaired": false,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "partially working",
+          "note": "Direct S3 access unaffected. Access via VPC endpoints impaired (no window given)."
+        },
+        "dynamodb": {
+          "impaired": false,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "partially working",
+          "note": "Direct DynamoDB access unaffected. Access via VPC endpoints impaired (no window given)."
+        },
+        "lambda": {
+          "impaired": false,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "normal",
+          "note": "PES: Lambda APIs and invocations operated normally. API Gateway, often used in front of Lambda, was impaired until about 4:37 PM PST (00:37Z Dec 8)."
+        },
+        "ec2_api": {
+          "impaired": true,
+          "start_utc": "2021-12-07T15:33:00Z",
+          "end_utc": "2021-12-07T22:40:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated EC2 API errors and latency. Describe and other APIs improved from 1:15 PM PST (21:15Z). New launches impaired until 2:40 PM PST (22:40Z)."
+        },
+        "sts": {
+          "impaired": true,
+          "start_utc": null,
+          "end_utc": "2021-12-08T00:28:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated STS latency (federation/OIDC credentials) until 4:28 PM PST. Start not stated, presumably from about 15:33Z. Improved from 2:22 PM PST (22:22Z)."
+        }
+      },
+      "root_cause": "An automated capacity-scaling activity on the main AWS network triggered unexpected client behavior on the internal network. The resulting connection surge overwhelmed the devices between the two networks, and retries kept the congestion going.",
+      "sources": [
+        "https://aws.amazon.com/message/12721/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 670,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2021-12-22",
+      "title": "Power loss in a single datacenter in USE1-AZ4 (no PES)",
+      "scope": "single-AZ",
+      "scope_reason": "AWS confirmed a loss of power within a single datacenter in a single AZ (USE1-AZ4). Other AZs were not affected.",
+      "tz_source": "PST",
+      "start_utc": "2021-12-22T12:35:00Z",
+      "end_utc": null,
+      "end_utc_range": [
+        "2021-12-22T13:39:00Z",
+        "2021-12-22T21:31:00Z"
+      ],
+      "end_note": "AMBIGUOUS END. Start = first AWS status post at 4:35 AM PST; impact may have begun earlier. Power fully restored 5:39 AM PST (13:39Z). At 6:51 AM PST (14:51Z) network connectivity issues were still slowing recovery. I found no verified AWS resolution time. A third-party status page (Castle) logged AWS mitigating most EC2 issues by 21:31Z. Some hardware was unrecoverable.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "ec2_api": {
+          "impaired": true,
+          "start_utc": "2021-12-22T12:35:00Z",
+          "end_utc": "2021-12-22T13:18:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated RunInstances errors for launches in the affected AZ only. Reported at 5:01 AM PST and returning to normal by 5:18 AM PST. The start is the first status post; the error start is not explicitly stated. DescribeInstances not mentioned."
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "Loss of power within a single datacenter in USE1-AZ4 took down EC2 instances, EBS volumes and network devices. Root cause beyond power loss not published.",
+      "sources": [
+        "https://puck.nether.net/pipermail/outages-discussion/2021-December/002163.html",
+        "https://www.theregister.com/2021/12/22/aws_outage/"
+      ],
+      "confidence": "medium",
+      "secondary_source_only": true,
+      "duration_min": null,
+      "duration_min_range": [
+        64,
+        536
+      ]
+    },
+    {
+      "id": "2023-06-13",
+      "title": "AWS Lambda Service Event in Northern Virginia (US-EAST-1) Region",
+      "scope": "regional",
+      "scope_reason": "One Lambda Frontend cell was affected, but this impaired regional Lambda, which in turn impaired STS, the console, EventBridge, Connect and others. Not AZ-scoped.",
+      "tz_source": "PDT",
+      "start_utc": "2023-06-13T18:49:00Z",
+      "end_utc": "2023-06-13T22:37:00Z",
+      "end_note": "All services fully recovered by 3:37 PM PDT. The console was affected from 11:48 AM PDT (18:48Z).",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": true,
+          "start_utc": "2023-06-13T18:49:00Z",
+          "end_utc": "2023-06-13T22:37:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated invocation errors and latency in one cell; other cells unaffected. Synchronous invokes recovered 1:45 PM PDT (20:45Z); async backlog cleared by 3:37 PM PDT."
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "sts": {
+          "impaired": true,
+          "start_utc": "2023-06-13T18:49:00Z",
+          "end_utc": "2023-06-13T21:10:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated STS error rates 11:49 AM-2:10 PM PDT in three distinct impact periods (sub-periods not given here). SAML sign-in elevated errors 1:13-2:11 PM PDT."
+        }
+      },
+      "root_cause": "Lambda's Frontend fleet crossed a capacity threshold never before reached in one cell. That triggered a latent defect in which allocated execution environments went unused, blocking provisioning of new ones.",
+      "sources": [
+        "https://aws.amazon.com/message/061323/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 228,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2024-07-30",
+      "title": "Amazon Kinesis Data Streams Service Event in Northern Virginia (US-EAST-1) Region",
+      "scope": "regional",
+      "scope_reason": "An internal multi-AZ Kinesis cell used by AWS services degraded CloudWatch Logs, Firehose, ECS/Fargate, Lambda logging, S3 events and more across the region. The triggering deployment started in one AZ, but the impact was not AZ-scoped.",
+      "tz_source": "PDT",
+      "start_utc": "2024-07-30T21:45:00Z",
+      "end_utc": "2024-07-31T04:37:00Z",
+      "end_note": "Kinesis cell recovered 9:37 PM PDT. Most requests were normal by 7:21 PM PDT (02:21Z). The CloudWatch Logs backlog cleared 5:50 AM PDT Jul 31, and the S3 event backlog cleared 2:38 AM PDT Aug 1.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "GetObject not mentioned. S3 event notifications were delayed 21:45Z-02:21Z, with the backlog cleared 2024-08-01T09:38Z."
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": true,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "error rates elevated but partially working",
+          "note": "Function logs missing. Elevated errors or latency only for functions that block on logging. No invoke-specific window; recovered with CloudWatch Logs, within 21:45Z-04:37Z."
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "An impairment in a Kinesis Data Streams cell used only by AWS services in US-EAST-1. The cell management system mishandled a very large, low-throughput internal workload after a new architecture was deployed.",
+      "sources": [
+        "https://aws.amazon.com/message/073024/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 412,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2025-10-20",
+      "title": "Amazon DynamoDB Service Disruption in the Northern Virginia (US-EAST-1) Region (DNS race condition)",
+      "scope": "regional",
+      "scope_reason": "The regional DynamoDB endpoint's DNS record was emptied. That cascaded into EC2 launches (DWFM), NLB, Lambda, STS, IAM sign-in, ECS/EKS, Connect, Redshift and others across the region.",
+      "tz_source": "PDT",
+      "start_utc": "2025-10-20T06:48:00Z",
+      "end_utc": "2025-10-20T21:20:00Z",
+      "end_note": "11:48 PM PDT Oct 19 to 2:20 PM PDT Oct 20. Some Redshift clusters were impaired until 4:05 AM PDT Oct 21.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned in the PES text as fetched"
+        },
+        "dynamodb": {
+          "impaired": true,
+          "start_utc": "2025-10-20T06:48:00Z",
+          "end_utc": "2025-10-20T09:40:00Z",
+          "severity": "largely unavailable",
+          "note": "The regional endpoint DNS record was empty, so new connections failed (the PES calls this increased API error rates). Recovery came as DNS caches expired after the 2:25 AM PDT fix; the PES ends the window at 2:40 AM PDT."
+        },
+        "lambda": {
+          "impaired": true,
+          "start_utc": "2025-10-20T06:51:00Z",
+          "end_utc": "2025-10-20T21:15:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated API errors and latency 11:51 PM PDT Oct 19 to 2:15 PM PDT Oct 20. SQS event-source processing was impaired until 4:40 AM PDT (11:40Z)."
+        },
+        "ec2_api": {
+          "impaired": true,
+          "start_utc": "2025-10-20T06:48:00Z",
+          "end_utc": "2025-10-20T20:50:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated EC2 API errors and latency until 1:50 PM PDT. New launches failed outright 2:25-10:36 AM PDT (09:25-17:36Z). Existing instances were unaffected. DescribeInstances is not specifically split out."
+        },
+        "sts": {
+          "impaired": true,
+          "start_utc": "2025-10-20T06:51:00Z",
+          "end_utc": "2025-10-20T16:59:00Z",
+          "severity": "error rates elevated but partially working",
+          "note": "Elevated errors and latency 11:51 PM PDT Oct 19 to 1:19 AM PDT Oct 20 (06:51-08:19Z), then again 8:31-9:59 AM PDT (15:31-16:59Z). Not continuously impaired across the outer window. The PES omits the date on 9:59 AM; Oct 20 is inferred."
+        }
+      },
+      "root_cause": "A latent race condition in DynamoDB's automated DNS management system (between two DNS Enactors) left the regional endpoint's DNS record empty, and automation could not repair it.",
+      "sources": [
+        "https://aws.amazon.com/message/101925/",
+        "https://aws.amazon.com/premiumsupport/technology/pes/"
+      ],
+      "confidence": "high",
+      "duration_min": 872,
+      "secondary_source_only": false
+    },
+    {
+      "id": "2026-05-07",
+      "title": "Thermal (cooling) event in a use1-az4 datacenter, EC2/EBS power loss (no PES found)",
+      "scope": "single-AZ",
+      "scope_reason": "Per AWS statements quoted in press, a cooling failure in one datacenter hit EC2 and EBS in use1-az4 only; other AZs were not affected.",
+      "tz_source": "PDT",
+      "start_utc": "2026-05-07T23:20:00Z",
+      "end_utc": "2026-05-08T20:50:00Z",
+      "end_note": "AMBIGUOUS. Start = 4:20 PM PDT May 7 per AWS as quoted by Yahoo Finance. The first status-page impairment notice was 5:25 PM PDT (00:25Z May 8), per DCD and trackers. Power was restored to a subset by 9:12 PM PDT (04:12Z May 8). At the 3:54 AM PDT May 8 update, full recovery was still expected to take several more hours. End = cooling back to pre-event levels at 1:50 PM PDT May 8, from secondary blogs only (Tech Insider, SingleStore). Some EC2/EBS stayed impaired after that, and some sources cite about 28 h total. No AWS PES on the index as of 2026-11-01.",
+      "services": {
+        "s3": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "dynamodb": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "lambda": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        },
+        "ec2_api": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "EC2 instances and EBS volumes in use1-az4 lost power; no regional EC2 API impairment reported"
+        },
+        "sts": {
+          "impaired": null,
+          "start_utc": null,
+          "end_utc": null,
+          "severity": "not stated",
+          "note": "Not mentioned"
+        }
+      },
+      "root_cause": "A cooling-system failure caused a temperature rise in one use1-az4 datacenter, which caused power loss to EC2 and EBS hardware. AWS had not published a detailed root cause.",
+      "sources": [
+        "https://finance.yahoo.com/markets/crypto/articles/aws-data-center-outage-knocks-115048854.html",
+        "https://www.itpro.com/infrastructure/aws-outage-explained-may-2026-data-center-overheating",
+        "https://www.datacenterdynamics.com/en/news/aws-experiences-power-issues-at-northern-virginia-cloud-region/",
+        "https://tech-insider.org/aws-outage-us-east-1-2026/",
+        "https://www.singlestore.com/blog/aws-outage-may-2026-cross-region-disaster-recovery/"
+      ],
+      "confidence": "low",
+      "secondary_source_only": true,
+      "duration_min": 1290
+    }
+  ],
+  "notes": [
+    "All UTC times are converted from the source time zone shown in tz_source (PDT = UTC-7, PST = UTC-8). Times marked 'inferred' or 'presumably' are not in the source.",
+    "services.*.impaired: true = the source states impairment; false = the source states the service was unaffected or working normally on direct access; null = not mentioned or not stated. For a trigger, a null does not mean the service was healthy.",
+    "No source reports per-API (GetObject/GetItem/Invoke/DescribeInstances/GetCallerIdentity) metrics. The windows are service-level statements from the sources mapped onto those APIs.",
+    "PES index (fetched 2026-11-01) lists 18 summaries, the latest being 2025-10-19/20. The us-east-1 ones are all included here: 2011-04-21, 2012-06-29, 2012-10-22, 2012-12-24, 2014-06-13 (SimpleDB, 'US East' per page; region not stated on index), 2015-09-20, 2017-02-28, 2020-11-25, 2021-12-07, 2023-06-13, 2024-07-30, 2025-10-19/20. The non-us-east-1 ones were excluded: Tokyo 2021, Tokyo 2019, Seoul 2018, Sydney 2016, EU West 2014, SA-East 2013.",
+    "Events with secondary_source_only=true have no AWS PES. Their times come from press and status-page reproductions of AWS Health Dashboard posts, which I did not fetch directly.",
+    "Not included (below 1 h, or only on third-party trackers and not verified): a reported Direct Connect connectivity loss in us-east-1 on 2026-02-21 (~95 min, one tracker only); an EC2 issue on 2026-09-21 (~57 min, tracker only); a reported 2012-06-14 us-east-1 power event (not on the PES index, not researched).",
+    "Several older PES pages omit the year or the end date (2012-12-24 end date, 2014-06-13 year, 2015-09-20 year). These were taken from the PES index dates and page context."
+  ]
+}

@@ -21,36 +21,55 @@ FMT = "%Y-%m-%dT%H:%MZ"
 
 
 def minute_states(records: Iterable[dict], cfg: dict) -> Dict[str, Dict[str, str]]:
-    """{minute: {service: 'down' | 'up' | 'unknown'}}"""
+    """{minute: {service: 'down' | 'up' | 'unknown'}}
+
+    An operator fails a service when at least "window_fail_share" of its usable checks over the last
+    "window_minutes" failed (defaults 1.0 and 1: every check that minute failed). A rolling window with a lower share
+    catches partial outages, where some calls still succeed, which a single-minute rule sees as flickering.
+    Several checks a minute (probe.run --rounds) make that judgement much less noisy.
+    """
     ops = cfg["operators"]
     fail_kinds = set(cfg.get("fail_kinds", ["server_error", "timeout", "network", "throttled"]))
-    by = defaultdict(lambda: defaultdict(dict))               # minute -> network -> service -> True / False / None
+    # minute -> operator -> service -> [failed, usable] check counts. A network's round counts only if its control
+    # check in the same round worked; a failure counts only if its kind means the service was down.
+    counts: Dict[str, Dict[str, Dict[str, List[int]]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [0, 0])))
+    rounds = defaultdict(dict)                                # (minute, network, at) -> {service: record}
     for r in records:
-        # True = worked, False = failed in a way that means the service was down, None = says nothing about AWS
-        kind = r.get("kind", "ok" if r["ok"] else "server_error")
-        by[r["minute"]][r["network"]][r["service"]] = True if r["ok"] else (False if (kind in fail_kinds or r["service"] == "control") else None)
+        rounds[(r["minute"], r["network"], r.get("at", r["minute"]))][r["service"]] = r
+    for (minute, net, _), res in rounds.items():
+        op = ops.get(net, net)
+        ctl = res.get("control")
+        if ctl is None or not ctl["ok"]:
+            continue                                          # the probe itself couldn't reach the outside world
+        for svc in cfg["services"]:
+            r = res.get(svc)
+            if r is None:
+                continue
+            kind = r.get("kind", "ok" if r["ok"] else "server_error")
+            if not r["ok"] and kind not in fail_kinds:
+                continue                                      # e.g. 403: AWS answered, so this says nothing about an outage
+            c = counts[minute][op][svc]
+            c[0] += 0 if r["ok"] else 1
+            c[1] += 1
+    minutes = sorted({k[0] for k in rounds})
+    window, share = int(cfg.get("window_minutes", 1)), float(cfg.get("window_fail_share", 1.0))
+    need = cfg["operators_required"]
+    all_ops = sorted({op for m in counts.values() for op in m})
     out: Dict[str, Dict[str, str]] = {}
-    for minute, nets in by.items():
+    for i, minute in enumerate(minutes):
+        t_now = datetime.strptime(minute, FMT)
+        recent = [m for m in minutes[max(0, i - window * 2):i + 1]
+                  if (t_now - datetime.strptime(m, FMT)).total_seconds() < window * 60]
         out[minute] = {}
         for svc in cfg["services"]:
-            per_op: Dict[str, str] = {}
-            for net, res in nets.items():
-                op = ops.get(net, net)
-                if not res.get("control", False) or res.get(svc) is None:
-                    state = "unusable"
-                else:
-                    state = "ok" if res[svc] else "fail"
-                prev = per_op.get(op)
-                # within one operator, any success wins; a usable failure beats unusable
-                if prev == "ok" or state == "ok":
-                    per_op[op] = "ok"
-                elif prev == "fail" or state == "fail":
-                    per_op[op] = "fail"
-                else:
-                    per_op[op] = "unusable"
-            fails = sum(1 for s in per_op.values() if s == "fail")
-            usable = sum(1 for s in per_op.values() if s != "unusable")
-            need = cfg["operators_required"]
+            fails = usable = 0
+            for op in all_ops:
+                f = sum(counts[m][op][svc][0] for m in recent if op in counts[m])
+                n = sum(counts[m][op][svc][1] for m in recent if op in counts[m])
+                # share 1.0 (the minute rule): an operator fails only if every usable check it made failed
+                st = "unusable" if n == 0 else ("fail" if f / n >= share else "ok")
+                fails += st == "fail"
+                usable += st != "unusable"
             out[minute][svc] = "down" if fails >= need else ("unknown" if usable < need else "up")
     return out
 

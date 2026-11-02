@@ -81,11 +81,16 @@ export default {
     const headObj = await env.TELEMETRY.get(`chains/${NETWORK}/head.json`);
     let { seq, hash } = headObj ? await headObj.json() : { seq: 0, hash: GENESIS };
     const sealed = [];
-    for (const rec of await probeOnce(env, now)) {
-      seq += 1;
-      const r = await seal(rec, hash, seq, key);
-      hash = r.hash;
-      sealed.push(r);
+    const rounds = Math.max(1, parseInt(env.PROBE_ROUNDS || "6", 10));
+    for (let k = 0; k < rounds; k++) {
+      if (k) await new Promise((r) => setTimeout(r, Math.max(0, now.getTime() + (k * 60000) / rounds - Date.now())));
+      for (const rec of await probeOnce(env, k ? new Date() : now)) {
+        rec.minute = iso(now, true); // every round in this minute belongs to it
+        seq += 1;
+        const r = await seal(rec, hash, seq, key);
+        hash = r.hash;
+        sealed.push(r);
+      }
     }
     const day = iso(now).slice(0, 10), hhmm = iso(now).slice(11, 16).replace(":", "");
     let name = `runs/${NETWORK}/${day}/${hhmm}.jsonl`;

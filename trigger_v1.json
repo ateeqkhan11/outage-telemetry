@@ -1,0 +1,27 @@
+{
+  "version": "1-draft",
+  "status": "DRAFT - to be locked with the advisors by 2026-11-13",
+  "region": "us-east-1",
+  "services": ["s3", "dynamodb", "lambda", "ec2", "sts"],
+  "operators": {
+    "github": "microsoft",
+    "azure": "microsoft",
+    "cloudflare": "cloudflare",
+    "gcp": "google",
+    "vps": "independent-vps",
+    "local": "local"
+  },
+  "operators_required": 2,
+  "fail_kinds": ["server_error", "timeout", "network", "throttled"],
+  "recovery_minutes": 3,
+  "region_rule": "any_service",
+  "waiting_periods_min": [60, 120],
+  "notes": [
+    "Only these failure kinds count as the service failing: server_error (HTTP 5xx), timeout, network (no connection) and throttled (open question for the advisors: AWS throttles heavily while recovering). client_error (HTTP 4xx such as bad credentials) proves the service answered, so it counts as unusable, never as down.",
+    "A network's minute counts only if its control check (a site outside AWS) succeeded; otherwise the probe itself was down.",
+    "Networks are counted by operator, not by name: GitHub Actions runs on Microsoft Azure, so github and azure together count once.",
+    "A service-minute is DOWN when at least operators_required operators see the check fail. It is UNKNOWN when fewer than operators_required operators have usable data.",
+    "An outage starts at the first DOWN minute and ends after recovery_minutes consecutive minutes that are not DOWN. UNKNOWN minutes inside an outage do not end it.",
+    "Regional outage (v1): any of the listed services is DOWN. Single availability-zone events are out of scope until Q1."
+  ]
+}

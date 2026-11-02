@@ -1,0 +1,20 @@
+# Cloudflare Workers probe network. Deploy: npm install && npx wrangler deploy
+# Secrets: npx wrangler secret put AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / PROBE_SIGNING_KEY
+name = "outage-probe"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+crons = ["* * * * *"]          # every minute
+
+[[r2_buckets]]
+binding = "TELEMETRY"
+bucket_name = "outage-telemetry"   # the same bucket the other networks write to
+
+[vars]
+PROBE_BUCKET = "REPLACE-probe-bucket-name"
+PROBE_OBJECT_KEY = "probe.txt"
+PROBE_TABLE = "outage-probe"
+PROBE_TABLE_KEY = '{"pk":{"S":"probe"}}'
+PROBE_FUNCTION = "outage-probe-hello"
+CONTROL_URL = "https://www.google.com/generate_204"

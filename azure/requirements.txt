@@ -1,0 +1,3 @@
+azure-functions
+boto3>=1.34
+cryptography>=42

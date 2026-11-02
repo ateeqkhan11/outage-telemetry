@@ -1,0 +1,35 @@
+# Once a day: build and verify yesterday's daily files from R2, then commit them (with the manifest of file hashes)
+# to the `data` branch. The commit is the public timestamp: any later change to a record would no longer match it.
+# `main` stays code-only and protected; this job only ever pushes to `data`.
+name: daily-file
+on:
+  schedule:
+    - cron: "17 0 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "UTC day to build (YYYY-MM-DD); default yesterday"
+        required: false
+permissions:
+  contents: write
+concurrency:
+  group: daily-file
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Build and verify the daily files
+        run: python -m probe.daily --keys keys --copy-to "$RUNNER_TEMP/daily" ${{ inputs.date && format('--date {0}', inputs.date) || '' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+      - name: Commit to the data branch
+        run: bash scripts/commit_daily.sh "$RUNNER_TEMP/daily"

@@ -2,14 +2,42 @@
   "version": "1-draft-rolling",
   "status": "ALTERNATIVE for the advisors: same as trigger_v1.json but judged over a rolling 10-minute window",
   "region": "us-east-1",
-  "services": ["s3", "dynamodb", "lambda", "ec2", "sts"],
-  "operators": {"github": "microsoft", "azure": "microsoft", "cloudflare": "cloudflare", "gcp": "google", "vps": "independent-vps", "local": "local"},
+  "services": [
+    "s3",
+    "dynamodb",
+    "lambda",
+    "ec2",
+    "sts"
+  ],
+  "operators": {
+    "github": "microsoft",
+    "azure": "microsoft",
+    "cloudflare": "cloudflare",
+    "gcp": "google",
+    "vps": "independent-vps",
+    "local": "local",
+    "aws": "aws"
+  },
   "operators_required": 2,
-  "fail_kinds": ["server_error", "timeout", "network", "throttled"],
+  "fail_kinds": [
+    "server_error",
+    "timeout",
+    "network",
+    "throttled"
+  ],
   "window_minutes": 10,
   "window_fail_share": 0.1,
   "recovery_minutes": 3,
   "region_rule": "any_service",
-  "waiting_periods_min": [60, 120],
-  "notes": ["An operator fails a service when at least 10% of its usable checks in the last 10 minutes failed. At 6 checks a minute that is 6 of 60 calls; normal AWS error rates are far below that, so two operators crossing it together by chance is very unlikely."]
+  "waiting_periods_min": [
+    60,
+    120
+  ],
+  "notes": [
+    "An operator fails a service when at least 10% of its usable checks in the last 10 minutes failed. At 6 checks a minute that is 6 of 60 calls; normal AWS error rates are far below that, so two operators crossing it together by chance is very unlikely.",
+    "Reference networks (the AWS Lambda probe in Oregon) are shown on the dashboard but never counted: a probe inside AWS can't independently judge AWS."
+  ],
+  "reference_networks": [
+    "aws"
+  ]
 }

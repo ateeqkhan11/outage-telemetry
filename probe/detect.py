@@ -34,7 +34,10 @@ def minute_states(records: Iterable[dict], cfg: dict) -> Dict[str, Dict[str, str
     # check in the same round worked; a failure counts only if its kind means the service was down.
     counts: Dict[str, Dict[str, Dict[str, List[int]]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [0, 0])))
     rounds = defaultdict(dict)                                # (minute, network, at) -> {service: record}
+    reference = set(cfg.get("reference_networks", []))
     for r in records:
+        if r["network"] in reference:
+            continue                                          # shown on the dashboard, never counted
         rounds[(r["minute"], r["network"], r.get("at", r["minute"]))][r["service"]] = r
     for (minute, net, _), res in rounds.items():
         op = ops.get(net, net)

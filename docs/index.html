@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nimbus Index · AWS us-east-1</title>
+<meta name="description" content="Independent, signed measurements of AWS us-east-1 availability.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: status header, then services grid, outages, networks, verify-it-yourself; one column on phones */
+:root {
+  --bg: #F4F6F8; --paper: #FFFFFF; --ink: #111A23; --muted: #5B6672; --line: #D9DEE3; --sunk: #EEF1F4;
+  --up: #1D7A4C; --up-bg: #E1F2E8; --down: #B3261E; --down-bg: #FBE4E2; --unk: #7A6200; --unk-bg: #F8EFCF;
+  --bar: #B3261E; --bar-ok: #CFE6D8; --bar-none: #E3E7EB; --accent: #1F5FA8;
+  --display: 'IBM Plex Sans Condensed', 'Arial Narrow', Arial, sans-serif;
+  --body: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E141A; --paper: #151D25; --ink: #E4E9EE; --muted: #9AA6B2; --line: #283440; --sunk: #1B2530;
+  --up: #79D3A2; --up-bg: #16301F; --down: #FF8A80; --down-bg: #3A1A18; --unk: #E8C860; --unk-bg: #332B10;
+  --bar: #FF8A80; --bar-ok: #2B4A38; --bar-none: #24303B; --accent: #78B0EE; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0E141A; --paper: #151D25; --ink: #E4E9EE; --muted: #9AA6B2; --line: #283440; --sunk: #1B2530;
+  --up: #79D3A2; --up-bg: #16301F; --down: #FF8A80; --down-bg: #3A1A18; --unk: #E8C860; --unk-bg: #332B10;
+  --bar: #FF8A80; --bar-ok: #2B4A38; --bar-none: #24303B; --accent: #78B0EE; color-scheme: dark }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); padding-inline: 16px; padding-block: 28px 56px; }
+.page { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2 { font-family: var(--display); font-weight: 600; margin: 0; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: clamp(26px, 4vw, 36px); } h2 { font-size: 21px; margin-bottom: 10px; }
+a { color: var(--accent); } .muted { color: var(--muted); } .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+header { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; }
+.brand { font: 600 13px var(--mono); letter-spacing: .06em; color: var(--muted); }
+.updated { font-size: 13.5px; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.s-up { color: var(--up); background: var(--up-bg); } .s-down { color: var(--down); background: var(--down-bg); } .s-unknown { color: var(--unk); background: var(--unk-bg); }
+.big { font-size: 15px; padding: 6px 14px; }
+.notice { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start; }
+.notice b { display: block; margin-bottom: 2px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.svc { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.svc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.svc-head h3 { margin: 0; font: 600 17px var(--display); } .svc-head small { font: 12px var(--mono); color: var(--muted); }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 13.5px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; text-align: right; }
+.tl { display: flex; gap: 1px; height: 30px; align-items: flex-end; }
+.tl i { flex: 1; min-width: 1px; border-radius: 1px 1px 0 0; background: var(--bar-ok); }
+.tl i.none { background: var(--bar-none); height: 30%; } .tl i.bad { background: var(--bar); }
+.tl-axis { display: flex; justify-content: space-between; font: 11px var(--mono); color: var(--muted); }
+.err { font: 12px var(--mono); color: var(--muted); word-break: break-word; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 640px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; background: var(--sunk); }
+tr:last-child td { border-bottom: 0; }
+.ok { color: var(--up); font-weight: 600; } .bad { color: var(--down); font-weight: 600; }
+.verify { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+pre { margin: 0; background: var(--sunk); border-radius: 8px; padding: 12px; font: 12px/1.5 var(--mono); overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+button { font: 600 14px var(--body); padding: 9px 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--paper); cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.steps { margin: 0; padding-left: 20px; font-size: 14px; } .steps li { margin-bottom: 4px; }
+.steps .pass { color: var(--up); font-weight: 600; } .steps .fail { color: var(--down); font-weight: 600; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 14px; }
+.loading { color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .tl i { transition: height .4s ease-out; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <div class="brand">NIMBUS INDEX</div>
+      <h1>AWS us-east-1, measured independently</h1>
+      <div class="updated" id="updated">Loading the latest signed results…</div>
+    </div>
+    <span class="pill s-unknown big" id="overall">Loading</span>
+  </header>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <section>
+    <h2>Services</h2>
+    <p class="muted" style="margin:0 0 12px">Each service is called 6 times a minute from every probe network. Bars show the last 24 hours in 10-minute steps; red is the share of calls that failed.</p>
+    <div class="grid" id="services"><p class="loading">Loading…</p></div>
+  </section>
+
+  <section>
+    <h2>Outages under the trigger rules (last 24 hours)</h2>
+    <div id="outages" class="muted">Loading…</div>
+  </section>
+
+  <section>
+    <h2>Probe networks</h2>
+    <div class="tablewrap"><table id="networks"><tr><th>Network</th><th>Operator</th><th>Counted</th><th>Last result</th><th>Coverage, 24 h</th><th>Longest gap</th><th>Signatures</th></tr></table></div>
+  </section>
+
+  <section>
+    <h2>Check it yourself</h2>
+    <div class="verify">
+      <p style="margin:0">This is the latest signed record from a probe network. Your browser can recompute its hash from the content and check the signature against the network's published public key. Nothing is sent anywhere.</p>
+      <pre id="record">Loading…</pre>
+      <div><button id="verify-btn" type="button" disabled>Verify this record</button></div>
+      <ol class="steps" id="verify-steps" hidden></ol>
+    </div>
+  </section>
+
+  <footer>
+    Independent, signed measurements of AWS us-east-1. Each record is hash-chained and Ed25519-signed by the network that made it.
+    Raw data: <a id="data-link" href="https://github.com/ateeqkhan11/outage-telemetry/tree/data">data branch</a> ·
+    Code and rules: <a href="https://github.com/ateeqkhan11/outage-telemetry">github.com/ateeqkhan11/outage-telemetry</a> ·
+    <a href="backtest.html">Backtest of 16 past outages</a>
+  </footer>
+</div>
+<script>
+(function () {
+  const SRC = new URLSearchParams(location.search).get("src") ||
+    "https://raw.githubusercontent.com/ateeqkhan11/outage-telemetry/data/status/latest.json";
+  const $ = (id) => document.getElementById(id);
+  const NAMES = { s3: ["S3", "GetObject"], dynamodb: ["DynamoDB", "GetItem"], lambda: ["Lambda", "Invoke"], ec2: ["EC2 API", "DescribeInstances"], sts: ["STS", "GetCallerIdentity"] };
+  const WORD = { up: "Up", down: "Outage", unknown: "Not decidable yet" };
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const ago = (iso) => { const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? "just now" : m < 90 ? `${m} min ago` : `${Math.round(m / 60)} h ago`; };
+  const pill = (st, text) => `<span class="pill s-${st}">${esc(text || WORD[st])}</span>`;
+
+  function render(s) {
+    $("updated").textContent = `Updated ${ago(s.generated_at)} (${s.generated_at.replace("T", " ").slice(0, 16)} UTC) · last probe minute ${s.last_minute ? s.last_minute.replace("T", " ").replace("Z", " UTC") : "none"}`;
+    const ov = $("overall");
+    ov.className = `pill big s-${s.overall}`;
+    ov.textContent = s.overall === "up" ? "All services up" : s.overall === "down" ? "Outage detected" : "Collecting · not decidable yet";
+
+    const n = $("notice");
+    if (!s.can_decide) {
+      n.hidden = false;
+      n.innerHTML = `${pill("unknown", "Note")}<div><b>${s.independent_operators.length} of ${s.rules.operators_required} independent operators live</b>
+        An outage is only called when probes run by ${s.rules.operators_required} different operators see the same failure, so no single provider's problem can trigger a payout.
+        Live now: ${esc(s.independent_operators.join(", ") || "none")}. Every call is still measured and signed below.</div>`;
+    } else n.hidden = true;
+
+    $("services").innerHTML = Object.entries(s.services).map(([k, v]) => {
+      const [name, op] = NAMES[k] || [k, ""];
+      const okShare = v.checks ? (100 * (v.checks - v.failed) / v.checks) : null;
+      const lat = Object.entries(v.latency_ms_p50_last_hour).map(([net, ms]) => `${esc(net)} ${ms} ms`).join(" · ") || "—";
+      const bars = v.timeline.map((b) => {
+        if (!b.checks) return `<i class="none" title="${esc(b.t)}: no data"></i>`;
+        const share = b.failed / b.checks;
+        return share > 0 ? `<i class="bad" style="height:${Math.max(18, share * 100)}%" title="${esc(b.t)}: ${b.failed} of ${b.checks} calls failed"></i>`
+                         : `<i style="height:100%" title="${esc(b.t)}: all ${b.checks} calls OK"></i>`;
+      }).join("");
+      return `<article class="svc"><div class="svc-head"><div><h3>${name}</h3><small>${op}</small></div>${pill(v.state)}</div>
+        <div class="tl" role="img" aria-label="${name}: failed calls over the last 24 hours">${bars}</div>
+        <div class="tl-axis"><span>24 h ago</span><span>now</span></div>
+        <dl class="kv"><dt>Calls OK, 24 h</dt><dd class="num">${okShare === null ? "—" : okShare.toFixed(okShare === 100 ? 0 : 2) + "%"} <span class="muted">of ${v.checks.toLocaleString()}</span></dd>
+          <dt>Uptime under the rules</dt><dd class="num">${v.uptime_pct === null ? "needs 2 operators" : v.uptime_pct.toFixed(3) + "%"}</dd>
+          <dt>Median latency, last hour</dt><dd class="num">${lat}</dd></dl>
+        ${v.last_error ? `<div class="err">Last error: ${esc(v.last_error)}</div>` : ""}</article>`;
+    }).join("");
+
+    $("outages").innerHTML = s.outages.length
+      ? `<div class="tablewrap"><table><tr><th>Start</th><th>End</th><th>Length</th><th>Services</th>${s.rules.waiting_periods_min.map((w) => `<th>${w / 60} h wait met</th>`).join("")}</tr>
+         ${s.outages.map((o) => `<tr><td class="num">${esc(o.start)}</td><td class="num">${o.ongoing ? "ongoing" : esc(o.end)}</td><td class="num">${o.duration_min} min</td><td>${esc(o.services.join(", "))}</td>
+           ${s.rules.waiting_periods_min.map((w) => `<td>${o.meets_waiting_period[w] ? '<span class="bad">Yes</span>' : "No"}</td>`).join("")}</tr>`).join("")}</table></div>`
+      : `<p style="margin:0">${s.can_decide ? "None. No service failed for two independent operators at once." : "None can be called yet: this needs a second independent operator. Raw failures, if any, show as red bars above."}</p>`;
+
+    const rows = Object.entries(s.networks).map(([net, v]) => `<tr><td><b>${esc(net)}</b><br><span class="muted" style="font-size:12.5px">${esc(v.host || "")}</span></td>
+      <td>${esc(v.operator)}</td><td>${v.counted ? "Yes" : "No"}</td><td class="num">${v.last_minute ? ago(v.last_minute) : "—"}</td>
+      <td class="num">${(100 * v.minutes_covered / v.minutes_in_window).toFixed(1)}%</td><td class="num">${v.longest_gap_min} min</td>
+      <td>${v.chain_valid ? '<span class="ok">Valid</span>' : `<span class="bad">Invalid</span> <span class="err">${esc(v.problems[0] || "")}</span>`}</td></tr>`).join("");
+    $("networks").insertAdjacentHTML("beforeend", rows);
+
+    const net = Object.keys(s.sample_records).find((k) => s.networks[k] && s.networks[k].counted) || Object.keys(s.sample_records)[0];
+    if (net) {
+      const rec = s.sample_records[net][s.sample_records[net].length - 1];
+      $("record").textContent = JSON.stringify(rec, null, 1) + `\n\npublic key (${net}): ${s.public_keys[net] || "missing"}`;
+      const btn = $("verify-btn");
+      btn.disabled = false;
+      btn.onclick = () => verifyRecord(rec, s.public_keys[net], net);
+    }
+  }
+
+  // ---- in-browser verification: identical canonical JSON to probe/chain.py and workers/src/chain.js ----
+  const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const fromHex = (h) => new Uint8Array(h.match(/../g).map((x) => parseInt(x, 16)));
+  const fromB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  function canonical(rec) {
+    const keys = Object.keys(rec).filter((k) => k !== "hash" && k !== "sig").sort();
+    return new TextEncoder().encode("{" + keys.map((k) => JSON.stringify(k) + ":" + JSON.stringify(rec[k])).join(",") + "}");
+  }
+  async function verifyRecord(rec, pubB64, net) {
+    const out = $("verify-steps");
+    out.hidden = false;
+    const step = (ok, text) => `<li><span class="${ok ? "pass" : "fail"}">${ok ? "Pass" : "Fail"}</span> ${text}</li>`;
+    let html = "";
+    try {
+      const digest = hex(await crypto.subtle.digest("SHA-256", canonical(rec)));
+      html += step(digest === rec.hash, `SHA-256 of the record's content is <span class="num">${digest.slice(0, 16)}…</span>, ${digest === rec.hash ? "matching" : "NOT matching"} its <span class="num">hash</span> field.`);
+      const key = await crypto.subtle.importKey("raw", fromB64(pubB64), { name: "Ed25519" }, false, ["verify"]);
+      const ok = await crypto.subtle.verify({ name: "Ed25519" }, key, fromB64(rec.sig), fromHex(rec.hash));
+      html += step(ok, `Ed25519 signature ${ok ? "is valid" : "is NOT valid"} for the <b>${esc(net)}</b> network's public key.`);
+      html += `<li class="muted">Record ${rec.seq} links to the one before it through <span class="num">prev = ${esc(rec.prev.slice(0, 16))}…</span>; the full chain is checked on every update (see Signatures above).</li>`;
+    } catch (e) {
+      html += step(false, `Your browser couldn't run the check (${esc(e.message)}). Ed25519 needs a recent Chrome, Edge, Firefox or Safari; or run <span class="num">python -m probe.verify</span> from the repo.`);
+    }
+    out.innerHTML = html;
+  }
+
+  fetch(SRC, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(render)
+    .catch((e) => { $("updated").textContent = `Couldn't load the latest results (${e.message}). The raw data is on the data branch.`; $("overall").textContent = "Unavailable"; });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<meta charset="utf-8">
+<title>us-east-1 Outage Backtest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column for the argument, full-width tables for the evidence */
+:root {
+  --bg: #F5F6F7; --paper: #FFFFFF; --ink: #121A22; --muted: #5A6570; --line: #D8DDE2; --grid: #E6E9EC;
+  --seen: #1F5FA8; --unseen: #9AA5B1; --yes: #1D6B45; --yes-bg: #E2F1E8; --no: #6B7480; --no-bg: #EEF0F2;
+  --maybe: #8A5A00; --maybe-bg: #FBF0D9; --accent: #1F5FA8;
+  --display: 'IBM Plex Sans Condensed', 'Arial Narrow', Arial, sans-serif;
+  --body: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F151B; --paper: #161E26; --ink: #E3E8ED; --muted: #98A4B0; --line: #2A3540; --grid: #222C36;
+  --seen: #6FA8E8; --unseen: #5E6A76; --yes: #7FD3A4; --yes-bg: #173326; --no: #A0AAB4; --no-bg: #222A33;
+  --maybe: #E8B65A; --maybe-bg: #33280F; --accent: #6FA8E8; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0F151B; --paper: #161E26; --ink: #E3E8ED; --muted: #98A4B0; --line: #2A3540; --grid: #222C36;
+  --seen: #6FA8E8; --unseen: #5E6A76; --yes: #7FD3A4; --yes-bg: #173326; --no: #A0AAB4; --no-bg: #222A33;
+  --maybe: #E8B65A; --maybe-bg: #33280F; --accent: #6FA8E8; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 15.5px/1.6 var(--body); padding-inline: 16px; padding-block: 40px 64px; }
+.page { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+.prose { max-width: 70ch; }
+h1, h2 { font-family: var(--display); font-weight: 600; margin: 0; line-height: 1.15; text-wrap: balance; letter-spacing: -0.005em; }
+h1 { font-size: clamp(30px, 5vw, 44px); } h2 { font-size: 25px; margin-bottom: 10px; }
+p { margin: 0 0 12px; } ul { margin: 0 0 12px; padding-left: 22px; } li { margin-bottom: 6px; }
+a { color: var(--accent); } .muted { color: var(--muted); }
+.meta { color: var(--muted); font-size: 14px; margin-top: 10px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 0.92em; } .nowrap { white-space: nowrap; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+.stat { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.stat b { display: block; font: 600 30px var(--display); } .stat span { font-size: 13.5px; color: var(--muted); }
+.figure { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; }
+.figure svg { width: 100%; min-width: 600px; height: auto; display: block; }
+.grid { stroke: var(--grid); stroke-width: 1; } .tick { fill: var(--muted); font: 12px var(--mono); } .lane { fill: var(--ink); font: 500 13px var(--body); }
+.m-seen { fill: var(--seen); fill-opacity: .85; stroke: var(--paper); stroke-width: 2; }
+.m-unseen { fill: none; stroke: var(--unseen); stroke-width: 2; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 760px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; background: var(--bg); }
+th.grp { text-align: center; border-left: 1px solid var(--line); } td.l, th.l { border-left: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+.pill { display: inline-block; font-size: 12.5px; font-weight: 600; padding: 1px 9px; border-radius: 99px; white-space: nowrap; }
+.pill.yes { background: var(--yes-bg); color: var(--yes); } .pill.no { background: var(--no-bg); color: var(--no); } .pill.maybe { background: var(--maybe-bg); color: var(--maybe); }
+.tag { font-size: 11.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; white-space: nowrap; }
+.callout { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; }
+.sources ol { font-size: 13px; color: var(--muted); } .sources li { word-break: break-all; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 720px) { .stats { grid-template-columns: 1fr 1fr; } }
+</style>
+<div class="page">
+<header>
+  <h1>How an independent outage trigger would have handled 16 AWS us-east-1 outages</h1>
+  <p class="meta">Backtest pack · draft for review · built 1 November 2026 · AWS us-east-1 (N. Virginia), 2011–2026</p>
+  <p class="prose" style="margin-top:14px">We replayed every us-east-1 outage AWS has published a post-event summary for, plus four widely reported ones without a summary, against our draft trigger. The trigger needs probes run by two independent operators to see the same AWS service failing. The question for each outage: would it have paid after a 1-hour or a 2-hour waiting period?</p>
+  <div class="stats">
+    <div class="stat"><b>16</b><span>outages, 2011–2026</span></div>
+    <div class="stat"><b>9</b><span>visible to our five core checks</span></div>
+    <div class="stat"><b>8</b><span>would pay after 2 hours with the recommended rule</span></div>
+    <div class="stat"><b>0</b><span>false triggers in our must-not-pay tests</span></div>
+  </div>
+</header>
+
+<section>
+  <h2>Every outage since 2011</h2>
+  <div class="figure"><svg viewBox="0 0 760 170" role="img" aria-label="Timeline of 16 AWS us-east-1 outages from 2011 to 2026: 9 would have been seen by our five checks, 7 would not.">
+  <line class="grid" x1="170.0" x2="170.0" y1="30" y2="145"/><text class="tick" x="170.0" y="162" text-anchor="middle">2011</text><line class="grid" x1="276.1" x2="276.1" y1="30" y2="145"/><text class="tick" x="276.1" y="162" text-anchor="middle">2014</text><line class="grid" x1="382.3" x2="382.3" y1="30" y2="145"/><text class="tick" x="382.3" y="162" text-anchor="middle">2017</text><line class="grid" x1="488.4" x2="488.4" y1="30" y2="145"/><text class="tick" x="488.4" y="162" text-anchor="middle">2020</text><line class="grid" x1="594.5" x2="594.5" y1="30" y2="145"/><text class="tick" x="594.5" y="162" text-anchor="middle">2023</text><line class="grid" x1="700.6" x2="700.6" y1="30" y2="145"/><text class="tick" x="700.6" y="162" text-anchor="middle">2026</text>
+  <text class="lane" x="0" y="62">Seen by our checks</text>
+  <text class="lane" x="0" y="126">Not seen</text>
+  <circle class="m-seen" cx="180.7" cy="58" r="20.0"><title>21 Apr 2011: Amazon EC2 and Amazon RDS Service Disruption in the US East Region, 65 h, seen by our checks</title></circle><circle class="m-seen" cx="222.8" cy="58" r="9.7"><title>29 Jun 2012: AWS Service Event in the US East Region (derecho storm power loss), 6.7 h, seen by our checks</title></circle><circle class="m-seen" cx="233.9" cy="58" r="9.5"><title>22 Oct 2012: AWS Service Event in the US-East Region (EBS stuck volumes), 6.2 h, seen by our checks</title></circle><circle class="m-unseen" cx="240.0" cy="122" r="14.7"><title>24 Dec 2012: Amazon ELB Service Event in the US-East Region, 24 h, not seen by our checks</title></circle><circle class="m-unseen" cx="291.9" cy="122" r="8.5"><title>13 Jun 2014: Amazon SimpleDB Service Disruption (US East), 4.2 h, not seen by our checks</title></circle><circle class="m-seen" cx="336.9" cy="58" r="10.5"><title>20 Sep 2015: Amazon DynamoDB Service Disruption and Related Impacts in the US-East Region, 8.6 h, seen by our checks</title></circle><circle class="m-seen" cx="387.9" cy="58" r="8.6"><title>28 Feb 2017: Amazon S3 Service Disruption in the Northern Virginia, 4.3 h, seen by our checks</title></circle><circle class="m-unseen" cx="432.2" cy="122" r="6.8"><title>31 May 2018: EC2/EBS power event in a single US-EAST-1 Availability Zone (no PES), 1.6 h, not seen by our checks</title></circle><circle class="m-unseen" cx="476.4" cy="122" r="10.2"><title>31 Aug 2019: Power failure in one US-EAST-1 datacenter, 8.0 h, not seen by our checks</title></circle><circle class="m-seen" cx="520.2" cy="58" r="13.1"><title>25 Nov 2020: Amazon Kinesis Event in the Northern Virginia (US-EAST-1) Region, 17 h, seen by our checks</title></circle><circle class="m-seen" cx="556.7" cy="58" r="11.4"><title>7 Dec 2021: AWS Service Event in the Northern Virginia, 11 h, seen by our checks</title></circle><circle class="m-unseen" cx="558.2" cy="122" r="6.2"><title>22 Dec 2021: Power loss in a single datacenter in USE1-AZ4 (no PES), 1.0 h, not seen by our checks</title></circle><circle class="m-seen" cx="610.3" cy="58" r="8.3"><title>13 Jun 2023: AWS Lambda Service Event in Northern Virginia (US-EAST-1) Region, 3.8 h, seen by our checks</title></circle><circle class="m-unseen" cx="650.3" cy="122" r="9.8"><title>30 Jul 2024: Amazon Kinesis Data Streams Service Event in Northern Virginia, 6.9 h, not seen by our checks</title></circle><circle class="m-seen" cx="693.6" cy="58" r="12.4"><title>20 Oct 2025: Amazon DynamoDB Service Disruption in the Northern Virginia, 15 h, seen by our checks</title></circle><circle class="m-unseen" cx="712.9" cy="122" r="14.2"><title>7 May 2026: Thermal, 22 h, not seen by our checks</title></circle>
+</svg>
+    <div class="legend"><span><i style="background:var(--seen)"></i>Seen by our five checks (S3, DynamoDB, Lambda, EC2 API, STS)</span><span><i style="border:2px solid var(--unseen)"></i>Not seen</span><span>Circle size grows with the outage's length (capped for the longest)</span></div></div>
+</section>
+
+<section>
+  <h2>What we found</h2>
+  <div class="prose">
+    <ul>
+      <li><b>Clear, total outages pay under any rule.</b> The 2017 S3 outage and the October 2025 DynamoDB failure would have paid after both waiting periods in every simulation.</li>
+      <li><b>Most outages are partial, and a simple per-minute rule misses them.</b> Some calls keep working. Checked once a minute, a partial outage looks like flickering and rarely adds up to an hour. That affects the 2015, 2020, 2021 and 2023 events.</li>
+      <li><b>Six checks a minute, judged over a rolling 10 minutes, catches them.</b> With that rule, every outage our checks can see that lasted over 2 hours pays, in every simulation. This is our recommendation for trigger v1.</li>
+      <li><b>7 of 16 outages wouldn't be seen.</b> 4 were confined to one availability zone, and 3 hit services outside our five checks (ELB, SimpleDB, Kinesis/CloudWatch). This is the basis risk to discuss with buyers. Adding checks for those services and zones is cheap, and it's the Q1 plan.</li>
+      <li><b>Zone outages can still show up.</b> In 2011 and October 2012 one zone's failure also degraded the region-wide EC2 API, which our check measures, so those pay too.</li>
+      <li><b>Frequency.</b> With the recommended rule and a 2-hour wait, about 6 regional events in 16 years would have paid, 4 of them since 2020.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Event by event</h2>
+  <div class="tablewrap"><table>
+    <tr><th rowspan="2">Date</th><th rowspan="2">What happened</th><th rowspan="2">Scope</th><th rowspan="2">Length</th><th rowspan="2">Our checks that fail</th>
+      <th class="grp" colspan="2">Draft rule · 1 check/min</th><th class="grp" colspan="2">Recommended · 6 checks/min, rolling</th></tr>
+    <tr><th class="l">1 h wait</th><th>2 h wait</th><th class="l">1 h wait</th><th>2 h wait</th></tr>
+    <tr><td class="num nowrap">21 Apr 2011</td><td>Amazon EC2 and Amazon RDS Service Disruption in the US East Region</td>
+      <td>One zone</td><td class="num">65 h</td><td>EC2 API</td>
+      <td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">29 Jun 2012</td><td>AWS Service Event in the US East Region (derecho storm power loss)</td>
+      <td>One zone</td><td class="num">6.7 h</td><td>EC2 API</td>
+      <td><span class="pill yes">Pays</span></td><td><span class="pill no">No</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill no">No</span></td></tr><tr><td class="num nowrap">22 Oct 2012</td><td>AWS Service Event in the US-East Region (EBS stuck volumes)</td>
+      <td>One zone</td><td class="num">6.2 h</td><td>EC2 API</td>
+      <td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">24 Dec 2012</td><td>Amazon ELB Service Event in the US-East Region</td>
+      <td>Regional</td><td class="num">24 h</td><td><span class="muted">Elastic Load Balancing control plane; none of our five checks use it</span></td>
+      <td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td></tr><tr><td class="num nowrap">13 Jun 2014</td><td>Amazon SimpleDB Service Disruption (US East)</td>
+      <td>Regional</td><td class="num">4.2 h</td><td><span class="muted">SimpleDB, a legacy service we don&#x27;t check</span></td>
+      <td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td></tr><tr><td class="num nowrap">20 Sep 2015</td><td>Amazon DynamoDB Service Disruption and Related Impacts in the US-East Region</td>
+      <td>Regional</td><td class="num">8.6 h</td><td>DynamoDB</td>
+      <td><span class="pill maybe">Depends · 17–23%</span></td><td><span class="pill no">No</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">28 Feb 2017</td><td>Amazon S3 Service Disruption in the Northern Virginia</td>
+      <td>Regional</td><td class="num">4.3 h</td><td>S3, Lambda</td>
+      <td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">31 May 2018</td><td>EC2/EBS power event in a single US-EAST-1 Availability Zone (no PES) <span class="tag">press only</span></td>
+      <td>One zone</td><td class="num">1.6 h</td><td><span class="muted">Power loss in one availability zone (instances, not regional APIs)</span></td>
+      <td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td></tr><tr><td class="num nowrap">31 Aug 2019</td><td>Power failure in one US-EAST-1 datacenter <span class="tag">press only</span></td>
+      <td>One zone</td><td class="num">8.0 h</td><td><span class="muted">Power loss in one availability zone (instances and volumes)</span></td>
+      <td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td></tr><tr><td class="num nowrap">25 Nov 2020</td><td>Amazon Kinesis Event in the Northern Virginia (US-EAST-1) Region</td>
+      <td>Regional</td><td class="num">17 h</td><td>Lambda</td>
+      <td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">7 Dec 2021</td><td>AWS Service Event in the Northern Virginia</td>
+      <td>Regional</td><td class="num">11 h</td><td>EC2 API, STS</td>
+      <td><span class="pill maybe">Depends · 0–17%</span></td><td><span class="pill no">No</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">22 Dec 2021</td><td>Power loss in a single datacenter in USE1-AZ4 (no PES) <span class="tag">press only</span></td>
+      <td>One zone</td><td class="num">—</td><td><span class="muted">Power loss in one availability zone; launches there failed, regional APIs fine</span></td>
+      <td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td></tr><tr><td class="num nowrap">13 Jun 2023</td><td>AWS Lambda Service Event in Northern Virginia (US-EAST-1) Region</td>
+      <td>Regional</td><td class="num">3.8 h</td><td>Lambda, STS</td>
+      <td><span class="pill maybe">Depends · 0–70%</span></td><td><span class="pill no">No</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">30 Jul 2024</td><td>Amazon Kinesis Data Streams Service Event in Northern Virginia</td>
+      <td>Regional</td><td class="num">6.9 h</td><td><span class="muted">Kinesis and CloudWatch logs; Lambda hurt only functions that wait on logging</span></td>
+      <td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td></tr><tr><td class="num nowrap">20 Oct 2025</td><td>Amazon DynamoDB Service Disruption in the Northern Virginia</td>
+      <td>Regional</td><td class="num">15 h</td><td>DynamoDB, Lambda, EC2 API, STS</td>
+      <td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">7 May 2026</td><td>Thermal <span class="tag">press only</span></td>
+      <td>One zone</td><td class="num">22 h</td><td><span class="muted">Cooling failure in one availability zone; no AWS summary yet</span></td>
+      <td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td><td><span class="muted">not seen</span></td></tr>
+  </table></div>
+  <p class="muted" style="font-size:13.5px;margin-top:10px">"Pays" means the trigger fired in at least 90% of 30 simulations, under both the low and the high failure-rate assumption. "Depends" shows the range. Length is AWS's overall impact window; our checks may be affected for less of it.</p>
+</section>
+
+<section>
+  <h2>The threshold is a pricing dial</h2>
+  <p class="prose">The recommended rule counts an operator as seeing a failure when a set share of its checks over 10 minutes fail. A lower threshold pays on milder partial outages and costs more to cover. With a 2-hour wait: 8 events pay at 10%, 3 at 25% under both assumptions, and 2 at 50%.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Date</th><th>What happened</th><th>10% of checks fail</th><th>25%</th><th>50%</th></tr>
+    <tr><td class="num nowrap">21 Apr 2011</td><td>Amazon EC2 and Amazon RDS Service Disruption in the US East Region</td><td><span class="pill yes">Pays</span></td><td><span class="pill maybe">Depends · 0–100%</span></td><td><span class="pill no">No</span></td></tr><tr><td class="num nowrap">29 Jun 2012</td><td>AWS Service Event in the US East Region (derecho storm power loss)</td><td><span class="pill no">No</span></td><td><span class="pill no">No</span></td><td><span class="pill no">No</span></td></tr><tr><td class="num nowrap">22 Oct 2012</td><td>AWS Service Event in the US-East Region (EBS stuck volumes)</td><td><span class="pill yes">Pays</span></td><td><span class="pill maybe">Depends · 0–100%</span></td><td><span class="pill no">No</span></td></tr><tr><td class="num nowrap">20 Sep 2015</td><td>Amazon DynamoDB Service Disruption and Related Impacts in the US-East Region</td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill maybe">Depends · 73–87%</span></td></tr><tr><td class="num nowrap">28 Feb 2017</td><td>Amazon S3 Service Disruption in the Northern Virginia</td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr><tr><td class="num nowrap">25 Nov 2020</td><td>Amazon Kinesis Event in the Northern Virginia (US-EAST-1) Region</td><td><span class="pill yes">Pays</span></td><td><span class="pill maybe">Depends · 0–100%</span></td><td><span class="pill no">No</span></td></tr><tr><td class="num nowrap">7 Dec 2021</td><td>AWS Service Event in the Northern Virginia</td><td><span class="pill yes">Pays</span></td><td><span class="pill maybe">Depends · 0–100%</span></td><td><span class="pill no">No</span></td></tr><tr><td class="num nowrap">13 Jun 2023</td><td>AWS Lambda Service Event in Northern Virginia (US-EAST-1) Region</td><td><span class="pill yes">Pays</span></td><td><span class="pill maybe">Depends · 0–100%</span></td><td><span class="pill no">No</span></td></tr><tr><td class="num nowrap">20 Oct 2025</td><td>Amazon DynamoDB Service Disruption in the Northern Virginia</td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td><td><span class="pill yes">Pays</span></td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Must-not-pay tests</h2>
+  <p class="prose">An independent trigger has to ignore problems that aren't AWS's. Each case below ran for 3 hours through the same detection code.</p>
+  <div class="tablewrap"><table style="min-width:600px">
+    <tr><th>Situation</th><th>Draft rule</th><th>Recommended</th><th>Result</th></tr>
+    <tr><td>Microsoft-only problem for 3 hours (GitHub and Azure both fail, Cloudflare fine)</td><td class="num">0 min</td><td class="num">0 min</td><td><span class=pill yes>Correct</span></td></tr><tr><td>One probe network loses its internet for 3 hours</td><td class="num">0 min</td><td class="num">0 min</td><td><span class=pill yes>Correct</span></td></tr><tr><td>Our AWS credentials expire on every network (AWS answers 403)</td><td class="num">0 min</td><td class="num">0 min</td><td><span class=pill yes>Correct</span></td></tr><tr><td>Real outage seen by two operators for 3 hours (control)</td><td class="num">180 min</td><td class="num">180 min</td><td><span class=pill yes>Correct</span></td></tr>
+  </table></div>
+  <p class="muted" style="font-size:13.5px;margin-top:10px">Numbers are the longest outage each rule reported. GitHub Actions runs on Microsoft Azure, so GitHub and Azure probes count as one operator. A failed control check (a site outside AWS) marks the probe as down rather than AWS. An HTTP 403 means AWS answered, so it never counts as an outage.</p>
+</section>
+
+<section class="callout prose">
+  <h2>How this was done, and its limits</h2>
+  <ul>
+    <li><b>Sources.</b> AWS's own post-event summaries for 12 events. Press and status-page reports for the 4 marked "press only".</li>
+    <li><b>Simulated probes.</b> Our probes didn't exist during these events, and AWS publishes service-level descriptions, not per-call error rates. So we simulated three independent probe operators minute by minute, and ran their results through the same detection code the live probes use.</li>
+    <li><b>Assumed failure rates per call:</b>
+      <ul>
+        <li>"Largely unavailable": 95%.</li>
+        <li>"Very high errors": 55%.</li>
+        <li>"Elevated errors" (partial): tested at both 20% and 50%.</li>
+        <li>Latency-only: 5% or 20%.</li>
+      </ul>
+    </li>
+    <li><b>What we assumed about the probes.</b> One network misses 15% of minutes, to reflect GitHub's late schedules. Background failures run at 0.05% of calls.</li>
+    <li><b>Judgement calls are written down in the code.</b> For example, the 2017 Lambda impact is assumed to share S3's window. The 2021 STS impairment is treated as latency only. The 2024 Lambda impact doesn't count, because only functions that wait on logging were hurt.</li>
+    <li><b>Durations from the rolling rule</b> can run a few minutes past the real end of an outage, because it looks back 10 minutes.</li>
+    <li><b>Reproduce it:</b> <span class="num">python -m backtest.backtest</span> in the outage-telemetry repository.</li>
+  </ul>
+</section>
+
+<section class="sources">
+  <h2>Sources</h2>
+  <ol><li><a href="https://aws.amazon.com/message/061323/">https://aws.amazon.com/message/061323/</a></li><li><a href="https://aws.amazon.com/message/073024/">https://aws.amazon.com/message/073024/</a></li><li><a href="https://aws.amazon.com/message/101925/">https://aws.amazon.com/message/101925/</a></li><li><a href="https://aws.amazon.com/message/11201/">https://aws.amazon.com/message/11201/</a></li><li><a href="https://aws.amazon.com/message/12721/">https://aws.amazon.com/message/12721/</a></li><li><a href="https://aws.amazon.com/message/41926/">https://aws.amazon.com/message/41926/</a></li><li><a href="https://aws.amazon.com/message/5467D2/">https://aws.amazon.com/message/5467D2/</a></li><li><a href="https://aws.amazon.com/message/65648/">https://aws.amazon.com/message/65648/</a></li><li><a href="https://aws.amazon.com/message/65649/">https://aws.amazon.com/message/65649/</a></li><li><a href="https://aws.amazon.com/message/67457/">https://aws.amazon.com/message/67457/</a></li><li><a href="https://aws.amazon.com/message/680342/">https://aws.amazon.com/message/680342/</a></li><li><a href="https://aws.amazon.com/message/680587/">https://aws.amazon.com/message/680587/</a></li><li><a href="https://aws.amazon.com/premiumsupport/technology/pes/">https://aws.amazon.com/premiumsupport/technology/pes/</a></li><li><a href="https://finance.yahoo.com/markets/crypto/articles/aws-data-center-outage-knocks-115048854.html">https://finance.yahoo.com/markets/crypto/articles/aws-data-center-outage-knocks-115048854.html</a></li><li><a href="https://puck.nether.net/pipermail/outages-discussion/2021-December/002163.html">https://puck.nether.net/pipermail/outages-discussion/2021-December/002163.html</a></li><li><a href="https://tech-insider.org/aws-outage-us-east-1-2026/">https://tech-insider.org/aws-outage-us-east-1-2026/</a></li><li><a href="https://www.datacenterdynamics.com/en/news/aws-experiences-power-issues-at-northern-virginia-cloud-region/">https://www.datacenterdynamics.com/en/news/aws-experiences-power-issues-at-northern-virginia-cloud-region/</a></li><li><a href="https://www.itpro.com/infrastructure/aws-outage-explained-may-2026-data-center-overheating">https://www.itpro.com/infrastructure/aws-outage-explained-may-2026-data-center-overheating</a></li><li><a href="https://www.singlestore.com/blog/aws-outage-may-2026-cross-region-disaster-recovery/">https://www.singlestore.com/blog/aws-outage-may-2026-cross-region-disaster-recovery/</a></li><li><a href="https://www.theregister.com/2018/06/01/aws_outage/">https://www.theregister.com/2018/06/01/aws_outage/</a></li><li><a href="https://www.theregister.com/2019/09/04/aws_server_outage/">https://www.theregister.com/2019/09/04/aws_server_outage/</a></li><li><a href="https://www.theregister.com/2021/12/22/aws_outage/">https://www.theregister.com/2021/12/22/aws_outage/</a></li></ol>
+</section>
+<footer>Draft for review, not an offer of cover. Outage windows come from AWS post-event summaries and press reports. Per-call failure rates are assumptions, stated above.</footer>
+</div>

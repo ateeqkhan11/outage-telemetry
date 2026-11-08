@@ -22,6 +22,12 @@ def handler(event, context):
     if _key is None:
         seed = boto3.client("ssm").get_parameter(Name=os.environ["KEY_PARAM"], WithDecryption=True)["Parameter"]["Value"]
         _key = load_private(seed)
-    n = run_minutes("aws", 1, S3Store(os.environ["RESULTS_BUCKET"]), _key, chk.aws_checks(), chk.control_check(),
+    import json
+    from datetime import datetime, timezone
+    store = S3Store(os.environ["RESULTS_BUCKET"])
+    head = json.loads(store.get("chains/aws/head.json") or b"null")
+    if head and head["at"][:16] == datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M"):
+        return {"skipped": "this minute is already recorded"}    # EventBridge can deliver an invocation twice
+    n = run_minutes("aws", 1, store, _key, chk.aws_checks(), chk.control_check(),
                     wait=False, rounds=int(os.environ.get("PROBE_ROUNDS", "6")))
     return {"records": n}

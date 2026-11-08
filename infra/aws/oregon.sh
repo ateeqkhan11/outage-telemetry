@@ -75,14 +75,16 @@ ENV="Variables={RESULTS_BUCKET=$BUCKET,KEY_PARAM=$PARAM,PROBE_BUCKET=$PROBE_BUCK
 if exists aws lambda get-function --region $REGION --function-name $FN; then
   aws lambda update-function-code --region $REGION --function-name $FN --zip-file fileb://fn.zip >/dev/null
   aws lambda wait function-updated-v2 --region $REGION --function-name $FN
-  aws lambda update-function-configuration --region $REGION --function-name $FN --environment "$ENV" >/dev/null
+  aws lambda update-function-configuration --region $REGION --function-name $FN --environment "$ENV" --timeout 58 >/dev/null
+  aws lambda wait function-updated-v2 --region $REGION --function-name $FN
 else
   aws lambda create-function --region $REGION --function-name $FN --runtime python3.12 --handler handler.handler \
-    --role "arn:aws:iam::$ACCOUNT:role/$ROLE" --zip-file fileb://fn.zip --memory-size 256 --timeout 75 \
+    --role "arn:aws:iam::$ACCOUNT:role/$ROLE" --zip-file fileb://fn.zip --memory-size 256 --timeout 58 \
     --environment "$ENV" --tags project=outage-probe >/dev/null
   aws lambda wait function-active-v2 --region $REGION --function-name $FN
 fi
-aws lambda put-function-concurrency --region $REGION --function-name $FN --reserved-concurrent-executions 1 >/dev/null
+aws lambda put-function-concurrency --region $REGION --function-name $FN --reserved-concurrent-executions 1 >/dev/null 2>&1 \
+  || echo "(This account can't reserve concurrency; the handler skips a minute it has already recorded, and the 58 s timeout ends each run before the next.)"
 
 say "Test run (about a minute)"
 aws lambda invoke --region $REGION --function-name $FN --cli-read-timeout 120 out.json >/dev/null && cat out.json; echo

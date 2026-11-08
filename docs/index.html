@@ -100,8 +100,11 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   <section>
     <h2>Check it yourself</h2>
     <div class="verify">
-      <p style="margin:0">This is the latest signed record from a probe network. Your browser can recompute its hash from the content and check the signature against the network's published public key. Nothing is sent anywhere.</p>
+      <p style="margin:0">This is the latest signed record from a probe network. Your browser recomputes its fingerprint from the content and checks the probe's signature, so you don't have to take our word for it. Nothing is sent anywhere.</p>
       <pre id="record">Loading…</pre>
+      <details><summary class="muted" style="cursor:pointer;font-size:13.5px">Technical details</summary>
+        <p class="muted" style="font-size:13.5px;margin:8px 0 6px">The network's public key. It can only check signatures, never create them; the matching private key never leaves the probe's secret store.</p>
+        <pre id="pubkey"></pre></details>
       <div><button id="verify-btn" type="button" disabled>Verify this record</button></div>
       <ol class="steps" id="verify-steps" hidden></ol>
     </div>
@@ -173,7 +176,8 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     const net = Object.keys(s.sample_records).find((k) => s.networks[k] && s.networks[k].counted) || Object.keys(s.sample_records)[0];
     if (net) {
       const rec = s.sample_records[net][s.sample_records[net].length - 1];
-      $("record").textContent = JSON.stringify(rec, null, 1) + `\n\npublic key (${net}): ${s.public_keys[net] || "missing"}`;
+      $("record").textContent = JSON.stringify(rec, null, 1);
+      $("pubkey").textContent = `${net}: ${s.public_keys[net] || "missing"}`;
       const btn = $("verify-btn");
       btn.disabled = false;
       btn.onclick = () => verifyRecord(rec, s.public_keys[net], net);

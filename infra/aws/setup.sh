@@ -2,6 +2,7 @@
 # One-shot AWS setup for the outage probe. Run in AWS CloudShell (us-east-1) while signed in as an admin:
 #
 #   curl -sL https://raw.githubusercontent.com/ateeqkhan11/outage-telemetry/main/infra/aws/setup.sh | bash
+#   ... | NO_KEY=1 bash      to skip creating the probe user's access key (create it in the console instead)
 #
 # Creates, all tagged project=outage-probe and safe to run again:
 #   S3 bucket outage-probe-<account> with probe.txt, DynamoDB table outage-probe with one item,
@@ -68,6 +69,9 @@ EOF
 aws iam put-user-policy --user-name outage-probe --policy-name probe-only --policy-document file:///tmp/probe-policy.json
 
 say "Access key for the probe user"
+if [ "${NO_KEY:-0}" = "1" ]; then
+  echo "Skipped (NO_KEY=1). Create it in IAM -> Users -> outage-probe -> Security credentials -> Create access key."
+else
 n=$(aws iam list-access-keys --user-name outage-probe --query 'length(AccessKeyMetadata)' --output text)
 if [ "$n" -ge 1 ]; then
   echo "The probe user already has $n access key(s); not creating another."
@@ -81,6 +85,7 @@ else
       echo "  PROBE_AWS_ACCESS_KEY_ID      $id"
       echo "  PROBE_AWS_SECRET_ACCESS_KEY  $secret"
     }
+fi
 fi
 
 say "Done. GitHub variable to set"

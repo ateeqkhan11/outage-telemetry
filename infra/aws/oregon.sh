@@ -86,8 +86,12 @@ fi
 aws lambda put-function-concurrency --region $REGION --function-name $FN --reserved-concurrent-executions 1 >/dev/null 2>&1 \
   || echo "(This account can't reserve concurrency; the handler skips a minute it has already recorded, and the 58 s timeout ends each run before the next.)"
 
-say "Test run (about a minute)"
-aws lambda invoke --region $REGION --function-name $FN --cli-read-timeout 120 out.json >/dev/null && cat out.json; echo
+if exists aws events describe-rule --region $REGION --name $FN-every-minute; then
+  say "Test run skipped (the every-minute schedule already runs it; a second copy at the same time would fork the chain)"
+else
+  say "Test run (about a minute)"
+  aws lambda invoke --region $REGION --function-name $FN --cli-read-timeout 120 out.json >/dev/null && cat out.json; echo
+fi
 
 say "Every-minute schedule"
 RULE_ARN=$(aws events put-rule --region $REGION --name $FN-every-minute --schedule-expression "rate(1 minute)" --query RuleArn --output text)

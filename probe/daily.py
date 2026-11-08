@@ -21,7 +21,7 @@ from .chain import load_public, verify
 from .store import open_store, read_jsonl, to_jsonl
 
 
-def build_day(store, day: str, keys_dir: str) -> dict:
+def build_day(store, day: str, keys_dir: str, manifest_only: bool = False) -> dict:
     networks = sorted({k.split("/")[1] for k in store.list("runs/") if k.split("/")[2] == day})
     manifest: Dict[str, object] = {"date": day, "built_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "networks": {}}
     for net in networks:
@@ -46,7 +46,8 @@ def build_day(store, day: str, keys_dir: str) -> dict:
         if run:
             gaps.append(run)
         body = to_jsonl(recs)
-        store.put(f"daily/{day}/{net}.jsonl", body)
+        if not manifest_only:                                 # in git storage the per-minute files are already there
+            store.put(f"daily/{day}/{net}.jsonl", body)
         manifest["networks"][net] = {
             "records": len(recs), "minutes_covered": len(have), "minutes_in_day": expected,
             "first_seq": recs[0]["seq"] if recs else None, "last_seq": recs[-1]["seq"] if recs else None,
@@ -68,9 +69,10 @@ def main(argv: Optional[List[str]] = None) -> None:
     ap.add_argument("--keys", default="keys", help="folder with <network>.pub files")
     ap.add_argument("--local", help="read and write this folder instead of R2")
     ap.add_argument("--copy-to", help="also copy daily/<date>/ into this folder (the workflow commits it)")
+    ap.add_argument("--manifest-only", action="store_true", help="write only the manifest, not the combined daily files")
     a = ap.parse_args(argv)
     store = open_store(a.local)
-    m = build_day(store, a.date, a.keys)
+    m = build_day(store, a.date, a.keys, a.manifest_only)
     for net, s in m["networks"].items():
         print(f"{a.date} {net}: {s['records']} records, {s['minutes_covered']}/{s['minutes_in_day']} minutes, "
               f"longest gap {s['longest_gap_min']} min, chain {'valid' if s['chain_valid'] else 'INVALID'}")

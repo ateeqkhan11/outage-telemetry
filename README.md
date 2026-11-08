@@ -61,7 +61,10 @@ The canonical JSON has sorted keys, no spaces, ASCII text only and integers only
 JavaScript (tested). See [docs/RECORD_FORMAT.md](docs/RECORD_FORMAT.md).
 
 - **Public keys** are in `keys/<network>.pub`. Private keys live only in each platform's secrets.
-- **Per-minute storage:** results go to Cloudflare R2, one object per minute (R2 can't append).
+- **Per-minute storage:** one file per minute. For now these are committed to this repo's public **`data` branch**,
+  which is free and independent of AWS. Set the repository variable `STORAGE=r2` to switch to Cloudflare R2, which is
+  needed within a few weeks because the data branch grows by a few MB a day. Results are never stored in AWS, the
+  thing being measured.
 - **Daily file:** once a day, a workflow builds a verified file per network, plus a manifest of SHA-256 hashes, and
   commits them to the **`data` branch**. That commit is the public timestamp: a later change to any record would no
   longer match it.

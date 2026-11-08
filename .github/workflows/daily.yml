@@ -1,6 +1,6 @@
-# Once a day: build and verify yesterday's daily files from R2, then commit them (with the manifest of file hashes)
-# to the `data` branch. The commit is the public timestamp: any later change to a record would no longer match it.
-# `main` stays code-only and protected; this job only ever pushes to `data`.
+# Once a day: verify yesterday's results for every network, write the day's manifest (counts, gaps, chain check,
+# SHA-256 of each network's records) and commit it to the `data` branch. The commit is the public timestamp:
+# changing any record later would no longer match it. `main` stays code-only and protected.
 name: daily-file
 on:
   schedule:
@@ -13,7 +13,8 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: daily-file
+  group: daily-file            # pushes to `data` retry with a rebase if the probe pushed at the same moment
+  cancel-in-progress: false
 jobs:
   daily:
     runs-on: ubuntu-latest
@@ -24,12 +25,18 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - name: Build and verify the daily files
-        run: python -m probe.daily --keys keys --copy-to "$RUNNER_TEMP/daily" ${{ inputs.date && format('--date {0}', inputs.date) || '' }}
+      - name: Open the data branch
+        run: bash scripts/data_branch.sh open store
+      - name: Build from R2
+        if: vars.STORAGE == 'r2'
+        run: python -m probe.daily --keys keys --copy-to store/daily ${{ inputs.date && format('--date {0}', inputs.date) || '' }}
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ vars.R2_BUCKET }}
-      - name: Commit to the data branch
-        run: bash scripts/commit_daily.sh "$RUNNER_TEMP/daily"
+      - name: Build from the data branch
+        if: vars.STORAGE != 'r2'
+        run: python -m probe.daily --keys keys --local store --manifest-only ${{ inputs.date && format('--date {0}', inputs.date) || '' }}
+      - name: Commit
+        run: bash scripts/data_branch.sh save store "daily manifest ${{ inputs.date || 'yesterday' }}"

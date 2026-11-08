@@ -57,7 +57,7 @@ cat > role.json <<JSON
   {"Effect": "Allow", "Action": "ec2:DescribeInstances", "Resource": "*", "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}},
   {"Effect": "Allow", "Action": ["s3:GetObject", "s3:PutObject"], "Resource": "arn:aws:s3:::$BUCKET/*"},
   {"Effect": "Allow", "Action": "s3:ListBucket", "Resource": "arn:aws:s3:::$BUCKET"},
-  {"Effect": "Allow", "Action": "ssm:GetParameter", "Resource": "arn:aws:ssm:$REGION:$ACCOUNT:parameter$PARAM"}
+  {"Effect": "Allow", "Action": "ssm:GetParameter", "Resource": ["arn:aws:ssm:$REGION:$ACCOUNT:parameter$PARAM", "arn:aws:ssm:$REGION:$ACCOUNT:parameter/outage-probe/github-token"]}
 ]}
 JSON
 aws iam put-role-policy --role-name $ROLE --policy-name probe-reference --policy-document file://role.json
@@ -71,7 +71,7 @@ cp outage-telemetry-main/aws_lambda/handler.py pkg/handler.py
 pip3 install -q --platform manylinux2014_x86_64 --implementation cp --python-version 3.12 --only-binary=:all: \
   --target pkg "cryptography>=42" 2>&1 | grep -v "WARNING" || true
 (cd pkg && zip -qr ../fn.zip .)
-ENV="Variables={RESULTS_BUCKET=$BUCKET,KEY_PARAM=$PARAM,PROBE_BUCKET=$PROBE_BUCKET,PROBE_TABLE=outage-probe,PROBE_FUNCTION=outage-probe-hello,PROBE_ROUNDS=6}"
+ENV="Variables={RESULTS_BUCKET=$BUCKET,KEY_PARAM=$PARAM,PROBE_BUCKET=$PROBE_BUCKET,PROBE_TABLE=outage-probe,PROBE_FUNCTION=outage-probe-hello,PROBE_ROUNDS=6,GITHUB_TOKEN_PARAM=/outage-probe/github-token,DISPATCH_REPO=ateeqkhan11/outage-telemetry}"
 if exists aws lambda get-function --region $REGION --function-name $FN; then
   aws lambda update-function-code --region $REGION --function-name $FN --zip-file fileb://fn.zip >/dev/null
   aws lambda wait function-updated-v2 --region $REGION --function-name $FN
@@ -103,6 +103,14 @@ cat > read.json <<JSON
 ]}
 JSON
 aws iam put-user-policy --user-name outage-probe --policy-name read-reference-results --policy-document file://read.json
+
+say "GitHub trigger token"
+if exists aws ssm get-parameter --region $REGION --name /outage-probe/github-token; then
+  echo "Stored. The Lambda starts the GitHub probe at minutes 3, 8, 13, ..."
+else
+  echo "Not stored yet. To let this Lambda start the GitHub probe every 5 minutes, run (your typing stays hidden):"
+  echo "  read -rsp 'GitHub token: ' T && aws ssm put-parameter --region $REGION --name /outage-probe/github-token --type SecureString --value \"\$T\" --overwrite >/dev/null && unset T && echo stored"
+fi
 
 say "Done"
 echo "GitHub variable REF_BUCKET = $BUCKET"

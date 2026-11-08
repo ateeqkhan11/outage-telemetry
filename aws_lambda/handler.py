@@ -29,11 +29,12 @@ def dispatch_github() -> str:
     param, repo = os.environ.get("GITHUB_TOKEN_PARAM"), os.environ.get("DISPATCH_REPO")
     if not param or not repo:
         return "not configured"
-    if _gh_token is None:
-        try:
-            _gh_token = boto3.client("ssm").get_parameter(Name=param, WithDecryption=True)["Parameter"]["Value"].strip()
-        except Exception as e:                               # no token stored yet
-            return f"no token: {type(e).__name__}"
+    try:                                                     # read every time (once per 5 min): a replaced token takes effect at once
+        _gh_token = boto3.client("ssm").get_parameter(Name=param, WithDecryption=True)["Parameter"]["Value"].strip()
+    except Exception as e:                                   # no token stored yet
+        return f"no token: {type(e).__name__}"
+    if not _gh_token:
+        return "token is empty"
     req = urllib.request.Request(
         f"https://api.github.com/repos/{repo}/actions/workflows/probe.yml/dispatches", method="POST",
         data=b'{"ref":"main"}', headers={"Authorization": f"Bearer {_gh_token}", "Accept": "application/vnd.github+json",

@@ -69,6 +69,15 @@ class R2Store:
             token = r["NextContinuationToken"]
 
 
+class S3Store(R2Store):
+    """Plain AWS S3 with the caller's own credentials. Used only by the reference probe inside AWS (aws_lambda/)."""
+
+    def __init__(self, bucket: str, region: Optional[str] = None):
+        import boto3
+        self.bucket = bucket
+        self.s3 = boto3.client("s3", region_name=region)
+
+
 def open_store(local: Optional[str] = None, env=os.environ):
     if local:
         return LocalStore(local)

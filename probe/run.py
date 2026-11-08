@@ -35,6 +35,8 @@ def where_am_i(network: str) -> str:
     e = os.environ
     if e.get("GITHUB_RUN_ID"):
         return f"github-actions run {e['GITHUB_RUN_ID']} {e.get('RUNNER_OS', '')}".strip()
+    if e.get("AWS_LAMBDA_FUNCTION_NAME"):
+        return f"aws-lambda {e['AWS_LAMBDA_FUNCTION_NAME']} {e.get('AWS_REGION', '')}".strip()
     if e.get("WEBSITE_SITE_NAME"):
         return f"azure-functions {e['WEBSITE_SITE_NAME']} {e.get('REGION_NAME', '')}".strip()
     return f"{network} {platform.node()}"[:80]

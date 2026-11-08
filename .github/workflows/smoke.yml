@@ -1,0 +1,45 @@
+# Manual check: probe AWS us-east-1 from GitHub for one minute, sign the results, verify them and print a table.
+# Needs only the AWS secrets and the signing key (no storage). Run it from the Actions tab or `gh workflow run smoke`.
+name: smoke-test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Probe for one minute (6 rounds)
+        run: python -m probe.run --network github --minutes 1 --no-wait --local out
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.PROBE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.PROBE_AWS_SECRET_ACCESS_KEY }}
+          PROBE_SIGNING_KEY: ${{ secrets.PROBE_SIGNING_KEY_GITHUB }}
+          PROBE_BUCKET: ${{ vars.PROBE_BUCKET }}
+          PROBE_TABLE: ${{ vars.PROBE_TABLE }}
+          PROBE_FUNCTION: ${{ vars.PROBE_FUNCTION }}
+      - name: Verify signatures with the public key in the repo
+        run: python -m probe.verify out/runs/github/*/ --keys keys --pub keys/github.pub
+      - name: Results
+        run: |
+          python - <<'PY'
+          import glob, json
+          rows = [json.loads(l) for f in sorted(glob.glob("out/runs/github/*/*.jsonl")) for l in open(f)]
+          by = {}
+          for r in rows:
+              by.setdefault(r["service"], []).append(r)
+          out = ["| Check | Calls | OK | Median ms | Last error |", "|---|---|---|---|---|"]
+          for svc, rs in by.items():
+              ok = sum(r["ok"] for r in rs)
+              ms = sorted(r["latency_ms"] for r in rs)[len(rs) // 2]
+              err = next((r["error"] for r in reversed(rs) if r["error"]), "")
+              out.append(f"| {svc} | {len(rs)} | {ok} | {ms} | {err[:80]} |")
+              print(f"{svc:<9} {ok}/{len(rs)} ok, median {ms} ms {err[:80]}")
+          open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a").write("\n".join(out) + "\n")
+          PY

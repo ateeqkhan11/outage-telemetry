@@ -1,5 +1,13 @@
 # AWS probe account setup (Sprint 1, steps 1–2)
 
+**Quickest way:** open AWS CloudShell in us-east-1 (the terminal icon in the console's top bar) and run
+
+```bash
+curl -sL https://raw.githubusercontent.com/ateeqkhan11/outage-telemetry/main/infra/aws/setup.sh | bash
+```
+
+It does sections 2 and 3 below in one go and is safe to run again. The manual steps follow for reference.
+
 Everything here lives in a **new AWS account used only for probing**. Nothing in it touches an employer's or a personal
 account. Cost should be close to $0 a month.
 

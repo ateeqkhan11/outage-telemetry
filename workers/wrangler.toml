@@ -7,12 +7,13 @@ compatibility_date = "2026-10-01"
 [triggers]
 crons = ["* * * * *"]          # every minute
 
-[[r2_buckets]]
-binding = "TELEMETRY"
-bucket_name = "outage-telemetry"   # the same bucket the other networks write to
+[[d1_databases]]
+binding = "DB"
+database_name = "outage-probe"
+database_id = "REPLACE-after-wrangler-d1-create"
 
 [vars]
-PROBE_BUCKET = "REPLACE-probe-bucket-name"
+PROBE_BUCKET = "outage-probe-142636331400"
 PROBE_OBJECT_KEY = "probe.txt"
 PROBE_TABLE = "outage-probe"
 PROBE_TABLE_KEY = '{"pk":{"S":"probe"}}'

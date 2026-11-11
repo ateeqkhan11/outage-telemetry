@@ -53,5 +53,8 @@ jobs:
             done
             aws s3 cp --only-show-errors "s3://${{ vars.REF_BUCKET }}/chains/aws/head.json" store/chains/aws/head.json || true
           fi
+          if [ -n "${{ vars.CF_PROBE_URL }}" ]; then        # copy the Cloudflare probe's results (second operator)
+            python scripts/pull_cloudflare.py --url "${{ vars.CF_PROBE_URL }}" --store store || echo "cloudflare pull failed"
+          fi
           python -m probe.status --local store --keys keys --config trigger_v1_rolling.json || echo "status build failed (probe data still saved)"
           bash scripts/data_branch.sh save store "probe github $(date -u +%Y-%m-%dT%H:%MZ)"

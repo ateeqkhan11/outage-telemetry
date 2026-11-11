@@ -1,0 +1,241 @@
+<title>Nimbus Index Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; two wide diagrams in their own scroll boxes; a status table at the end. Sky-instrument palette. */
+:root {
+  --bg: #f5f7f9; --panel: #ffffff; --fg: #17222c; --muted: #5a6875; --line: #c9d3dc;
+  --sky: #1f6fb2; --sky-soft: #e3eef8;
+  --live: #1d7a46; --live-soft: #e0f2e7; --next: #9a5b00; --next-soft: #fbefd9; --plan: #66727e; --plan-soft: #eceff2;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f161d; --panel: #16212b; --fg: #e4ebf1; --muted: #9aa8b5; --line: #2c3b48;
+  --sky: #6fb3ea; --sky-soft: #17324a;
+  --live: #5fcf8c; --live-soft: #15392a; --next: #f0b45a; --next-soft: #3d2c12; --plan: #9aa6b1; --plan-soft: #24303a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f161d; --panel: #16212b; --fg: #e4ebf1; --muted: #9aa8b5; --line: #2c3b48;
+  --sky: #6fb3ea; --sky-soft: #17324a;
+  --live: #5fcf8c; --live-soft: #15392a; --next: #f0b45a; --next-soft: #3d2c12; --plan: #9aa6b1; --plan-soft: #24303a; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 17px/1.55 var(--body); }
+.wrap { max-width: 1060px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; }
+h2 { font-size: 24px; font-weight: 700; margin-top: 56px; }
+h3 { font-size: 17px; font-weight: 700; }
+.eyebrow { font: 600 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sky); }
+.lede { font-size: 20px; margin-top: 14px; }
+p { margin: 10px 0 0; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+
+.story { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+.step { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; position: relative; }
+.step .n { font: 600 12px var(--mono); color: var(--sky); }
+.step h3 { margin-top: 6px; }
+.step p { font-size: 15px; color: var(--muted); }
+.step.us { border-color: var(--sky); background: var(--sky-soft); }
+@media (max-width: 760px) { .story { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 440px) { .story { grid-template-columns: 1fr; } }
+
+.diagram { margin-top: 20px; overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.diagram svg { display: block; min-width: 760px; width: 100%; height: auto; }
+svg text { font-family: var(--body); fill: var(--fg); }
+svg .t-title { font: 700 17px var(--display); }
+svg .t-sub { font-size: 13px; fill: var(--muted); }
+svg .t-mono { font: 12px var(--mono); fill: var(--muted); }
+svg .t-label { font: 600 12px var(--mono); fill: var(--sky); }
+svg .box { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+svg .box-aws { fill: var(--plan-soft); stroke: var(--line); stroke-width: 1.5; }
+svg .box-us { fill: var(--sky-soft); stroke: var(--sky); stroke-width: 1.5; }
+svg .box-ref { fill: var(--panel); stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 6 5; }
+svg .chip { fill: var(--panel); stroke: var(--line); }
+svg .arrow { stroke: var(--sky); stroke-width: 2; fill: none; marker-end: url(#ah); }
+svg .arrow-dim { stroke: var(--muted); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; marker-end: url(#ahd); }
+svg .ahfill { fill: var(--sky); } svg .ahdfill { fill: var(--muted); }
+svg .p-live { fill: var(--live-soft); } svg .p-live-t { fill: var(--live); font: 600 11px var(--mono); }
+svg .p-next { fill: var(--next-soft); } svg .p-next-t { fill: var(--next); font: 600 11px var(--mono); }
+svg .p-plan { fill: var(--plan-soft); } svg .p-plan-t { fill: var(--plan); font: 600 11px var(--mono); }
+
+.minute { margin-top: 18px; display: grid; gap: 0; border-left: 2px solid var(--line); padding-left: 0; }
+.minute li { list-style: none; position: relative; padding: 0 0 18px 26px; }
+.minute li::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--sky); }
+.minute b { font-family: var(--display); }
+.minute .when { font: 600 12px var(--mono); color: var(--muted); display: block; }
+.minute ol { padding: 0; margin: 0; }
+
+.why { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; margin-top: 16px; }
+.why div { border-top: 2px solid var(--line); padding-top: 10px; }
+.why p { font-size: 16px; color: var(--muted); }
+@media (max-width: 640px) { .why { grid-template-columns: 1fr; } }
+
+.tbl { overflow-x: auto; margin-top: 16px; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 16px; }
+th, td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td.d { font-family: var(--mono); font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; font: 600 11px/1 var(--mono); padding: 5px 8px; border-radius: 99px; letter-spacing: 0.04em; white-space: nowrap; }
+.pill.live { background: var(--live-soft); color: var(--live); }
+.pill.next { background: var(--next-soft); color: var(--next); }
+.pill.plan { background: var(--plan-soft); color: var(--plan); }
+a { color: var(--sky); }
+footer { margin-top: 48px; font-size: 14px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Nimbus Index · how it works</div>
+  <h1>An independent referee for cloud outages</h1>
+  <p class="lede prose">We watch AWS us-east-1 from outside AWS, from several independent networks, every few seconds. Every result is signed so nobody, including us, can change it later. When an insurer has to decide whether an outage happened and a policy pays, our record is the neutral second opinion.</p>
+
+  <h2>The business story</h2>
+  <p class="prose muted">Parametric cloud cover pays automatically when an agreed outage happens. The hard part is agreeing that it happened. That is the gap we fill.</p>
+  <div class="story">
+    <div class="step"><div class="n">1 · Before</div><h3>An MGA sells outage cover</h3><p>A business that runs on AWS buys a policy: "if us-east-1 is down for 2 hours, you get paid."</p></div>
+    <div class="step"><div class="n">2 · The event</div><h3>AWS us-east-1 fails</h3><p>S3, DynamoDB or another core service stops answering for many customers.</p></div>
+    <div class="step us"><div class="n">3 · Nimbus Index</div><h3>Our signed record confirms it</h3><p>Probes on networks run by different companies all saw the failure. The MGA checks its own data against ours.</p></div>
+    <div class="step"><div class="n">4 · After</div><h3>Payout, no dispute</h3><p>Two independent sources agree, so the claim pays in hours instead of weeks of arguing.</p></div>
+  </div>
+
+  <h2>The technical architecture</h2>
+  <p class="prose muted">Read it top to bottom: what we measure, who measures it, where the evidence goes, how an outage gets called, and who sees it.</p>
+  <div class="diagram" role="img" aria-label="Architecture: probe networks call AWS us-east-1, send signed results to a public record, an outage rule reads it, and a dashboard and app show it to insurers.">
+    <svg viewBox="0 0 1000 930" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahfill" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="ahd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahdfill" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+
+      <!-- AWS target -->
+      <rect class="box-aws" x="20" y="16" width="960" height="118" rx="10"/>
+      <text class="t-title" x="40" y="46">AWS us-east-1 · what we measure</text>
+      <text class="t-sub" x="40" y="66">Five tiny test resources in our AWS account. Each probe calls them like a normal customer would.</text>
+      <g>
+        <rect class="chip" x="40" y="80" width="170" height="38" rx="6"/><text x="125" y="104" text-anchor="middle">S3 · read a file</text>
+        <rect class="chip" x="225" y="80" width="170" height="38" rx="6"/><text x="310" y="104" text-anchor="middle">DynamoDB · read a row</text>
+        <rect class="chip" x="410" y="80" width="170" height="38" rx="6"/><text x="495" y="104" text-anchor="middle">Lambda · run a function</text>
+        <rect class="chip" x="595" y="80" width="170" height="38" rx="6"/><text x="680" y="104" text-anchor="middle">EC2 · list servers</text>
+        <rect class="chip" x="780" y="80" width="180" height="38" rx="6"/><text x="870" y="104" text-anchor="middle">STS · who am I</text>
+      </g>
+
+      <!-- probe arrows up -->
+      <path class="arrow" d="M127 232 V140"/>
+      <path class="arrow" d="M362 232 V140"/>
+      <path class="arrow" d="M597 232 V140"/>
+      <path class="arrow-dim" d="M847 232 V140"/>
+      <rect x="226" y="164" width="548" height="44" rx="6" fill="var(--panel)"/>
+      <text class="t-label" x="500" y="182" text-anchor="middle">EVERY 10 SECONDS: CALL ALL 5 SERVICES</text>
+      <text class="t-sub" x="500" y="200" text-anchor="middle">plus one control call to google.com, to prove the probe's own internet works</text>
+
+      <!-- probe networks -->
+      <text class="t-label" x="20" y="226">PROBE NETWORKS · OUTSIDE AWS, RUN BY DIFFERENT COMPANIES</text>
+      <rect class="box" x="20" y="236" width="215" height="112" rx="8"/>
+      <text class="t-title" x="36" y="264">GitHub Actions</text>
+      <text class="t-sub" x="36" y="284">operator: Microsoft</text>
+      <text class="t-mono" x="36" y="304">own signing key</text>
+      <rect class="p-live" x="36" y="316" width="52" height="20" rx="10"/><text class="p-live-t" x="62" y="330" text-anchor="middle">LIVE</text>
+
+      <rect class="box" x="255" y="236" width="215" height="112" rx="8"/>
+      <text class="t-title" x="271" y="264">Cloudflare Workers</text>
+      <text class="t-sub" x="271" y="284">operator: Cloudflare</text>
+      <text class="t-mono" x="271" y="304">own signing key</text>
+      <rect class="p-next" x="271" y="316" width="96" height="20" rx="10"/><text class="p-next-t" x="319" y="330" text-anchor="middle">DEPLOY NEXT</text>
+
+      <rect class="box" x="490" y="236" width="215" height="112" rx="8"/>
+      <text class="t-title" x="506" y="264">Third network</text>
+      <text class="t-sub" x="506" y="284">operator: Google or a VPS</text>
+      <text class="t-mono" x="506" y="304">own signing key</text>
+      <rect class="p-plan" x="506" y="316" width="72" height="20" rx="10"/><text class="p-plan-t" x="542" y="330" text-anchor="middle">PLANNED</text>
+
+      <rect class="box-ref" x="740" y="236" width="240" height="112" rx="8"/>
+      <text class="t-title" x="756" y="264">AWS Lambda, Oregon</text>
+      <text class="t-sub" x="756" y="284">reference view only, never counted</text>
+      <text class="t-mono" x="756" y="304">also starts each GitHub run</text>
+      <rect class="p-live" x="756" y="316" width="52" height="20" rx="10"/><text class="p-live-t" x="782" y="330" text-anchor="middle">LIVE</text>
+
+      <!-- down to record -->
+      <path class="arrow" d="M127 350 V438"/>
+      <path class="arrow" d="M362 350 V438"/>
+      <path class="arrow" d="M597 350 V438"/>
+      <path class="arrow-dim" d="M847 350 V438"/>
+      <rect x="140" y="372" width="200" height="44" rx="6" fill="var(--panel)"/>
+      <text class="t-label" x="240" y="390" text-anchor="middle">SIGNED RESULTS</text>
+      <text class="t-sub" x="240" y="408" text-anchor="middle">copied in every 5 minutes</text>
+
+      <!-- public record -->
+      <rect class="box-us" x="20" y="444" width="960" height="104" rx="10"/>
+      <text class="t-title" x="40" y="474">The public signed record</text>
+      <text class="t-sub" x="40" y="496">Every result is signed by its network and chained to the one before, so any edit or deletion shows. Stored in the public</text>
+      <text class="t-sub" x="40" y="514">GitHub "data" branch, outside AWS. Once a day a signed daily file and manifest are committed, fixing that day for good.</text>
+      <text class="t-mono" x="40" y="536">anyone can verify: python -m probe.verify  ·  or the button on the dashboard</text>
+
+      <!-- to rule -->
+      <path class="arrow" d="M500 550 V596"/>
+      <rect class="box" x="190" y="602" width="620" height="108" rx="10"/>
+      <text class="t-title" x="210" y="632">Outage rule (trigger v1, locked 13 Nov)</text>
+      <text class="t-sub" x="210" y="654">A service is DOWN when at least 2 different operators see it failing:</text>
+      <text class="t-sub" x="210" y="674">10% or more of checks failed over 10 minutes, while their own control call worked.</text>
+      <text class="t-mono" x="210" y="696">backtested on 16 real us-east-1 outages · zero false calls</text>
+
+      <!-- outputs -->
+      <path class="arrow" d="M380 712 L250 772"/>
+      <path class="arrow" d="M620 712 L750 772"/>
+      <rect class="box" x="40" y="778" width="420" height="110" rx="10"/>
+      <text class="t-title" x="60" y="808">Public dashboard</text>
+      <text class="t-sub" x="60" y="830">ateeqkhan11.github.io/outage-telemetry</text>
+      <text class="t-sub" x="60" y="850">live status, 24h timelines, verify-a-record button</text>
+      <rect class="p-live" x="60" y="860" width="52" height="20" rx="10"/><text class="p-live-t" x="86" y="874" text-anchor="middle">LIVE</text>
+
+      <rect class="box-us" x="540" y="778" width="420" height="110" rx="10"/>
+      <text class="t-title" x="560" y="808">app.nimbusindex.com</text>
+      <text class="t-sub" x="560" y="830">sign-in for pilots · dashboard · reports to download</text>
+      <text class="t-sub" x="560" y="850">API keys, so 3–5 pilot MGAs pull the feed automatically</text>
+      <rect class="p-next" x="560" y="860" width="76" height="20" rx="10"/><text class="p-next-t" x="598" y="874" text-anchor="middle">BUILDING</text>
+      <text class="t-mono" x="560" y="912">hosted in AWS Oregon, not us-east-1</text>
+    </svg>
+  </div>
+
+  <h2>What happens every minute</h2>
+  <ol class="minute prose">
+    <li><span class="when">second 0, 10, 20, 30, 40, 50</span><b>Probe.</b> Each network calls the five AWS services and google.com, and times each call.</li>
+    <li><span class="when">same second</span><b>Label.</b> Each call becomes ok, timeout, server error, no connection, throttled, or "AWS answered but refused us". Only the first four can count as AWS being down.</li>
+    <li><span class="when">end of the minute</span><b>Sign and chain.</b> Each result gets that network's signature and the fingerprint of the result before it.</li>
+    <li><span class="when">every 5 minutes</span><b>Publish.</b> The GitHub run collects the new results from all networks into the public data branch and rebuilds the status summary.</li>
+    <li><span class="when">same run</span><b>Decide.</b> The outage rule reads the last 10 minutes. Two operators agreeing on a failure means down.</li>
+    <li><span class="when">within a few minutes</span><b>Show.</b> The dashboard, and soon the app and its API, show the new status.</li>
+  </ol>
+
+  <h2>Why it is built this way</h2>
+  <div class="why prose" style="max-width:none">
+    <div><h3>Probes sit outside AWS</h3><p>A monitor inside AWS goes dark in the very outage it should record. The Oregon Lambda is inside AWS, so it is a reference view and never counts.</p></div>
+    <div><h3>Different companies, not just different machines</h3><p>If one provider has a bad day, its probes all fail together. GitHub runs on Microsoft, so it and Azure count as one. We need Cloudflare plus one more.</p></div>
+    <div><h3>Every result is signed</h3><p>An insurer paying out on our data must trust that nothing was edited after the fact, including by us. The signatures let them check that themselves.</p></div>
+    <div><h3>The record is public, the app is gated</h3><p>Open evidence is the trust story. The sign-in covers the convenience: reports, downloads and API keys. It also shows us which firms are interested.</p></div>
+  </div>
+
+  <h2>Where we are</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Piece</th><th>Status</th><th>Date</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>GitHub probe network (Microsoft)</td><td><span class="pill live">LIVE</span></td><td class="d">8 Nov</td><td>Started every 5 minutes by the Oregon Lambda</td></tr>
+        <tr><td>Oregon reference probe (AWS)</td><td><span class="pill live">LIVE</span></td><td class="d">8 Nov</td><td>Every minute; never counted</td></tr>
+        <tr><td>Public record and daily signed file</td><td><span class="pill live">LIVE</span></td><td class="d">8 Nov</td><td>GitHub data branch; move to Cloudflare storage later</td></tr>
+        <tr><td>Public dashboard</td><td><span class="pill live">LIVE</span></td><td class="d">8 Nov</td><td>Official calls start with the 2nd operator</td></tr>
+        <tr><td>Cloudflare probe network</td><td><span class="pill next">DEPLOY NEXT</span></td><td class="d">11 Nov</td><td>Code tested; needs a free Cloudflare account</td></tr>
+        <tr><td>Third network and trigger v1 locked</td><td><span class="pill plan">PLANNED</span></td><td class="d">13 Nov</td><td>Google Cloud Run or a small VPS</td></tr>
+        <tr><td>app.nimbusindex.com (sign-in, reports, API)</td><td><span class="pill next">BUILDING</span></td><td class="d">this week</td><td>Needs the DNS owner for nimbusindex.com</td></tr>
+        <tr><td>Backtest pack</td><td><span class="pill live">DONE</span></td><td class="d">24 Nov target</td><td><a href="https://ateeqkhan11.github.io/outage-telemetry/backtest.html">Read it</a></td></tr>
+        <tr><td>Pilot MGAs (3–5), paid pilot or letter of intent</td><td><span class="pill plan">PLANNED</span></td><td class="d">18 Dec</td><td>Mike's outreach, from his list of about 30 firms</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>Code: <a href="https://github.com/ateeqkhan11/outage-telemetry">github.com/ateeqkhan11/outage-telemetry</a> · Running cost today: about $0 (free tiers and AWS credits).</footer>
+</div>

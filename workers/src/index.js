@@ -95,6 +95,7 @@ async function getHead(db) {
 }
 
 export async function probeMinute(env, now) {
+  if (!env.AWS_ACCESS_KEY_ID || !env.AWS_SECRET_ACCESS_KEY || !env.PROBE_SIGNING_KEY) return { skipped: "secrets not set yet" };
   const db = env.DB;
   await ensureSchema(db);
   const head = await getHead(db);

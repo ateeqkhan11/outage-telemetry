@@ -54,12 +54,21 @@ def handler(event, context):
     import json
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc)
+    store = S3Store(os.environ["RESULTS_BUCKET"])
+    # EventBridge delivers "at least once": two copies can start in the same minute and both extend the chain from the
+    # same head (a fork). Claim the minute first with a write that only succeeds if nobody else has made it.
+    try:
+        store.s3.put_object(Bucket=store.bucket, Key=f"claims/aws/{now.strftime('%Y-%m-%d/%H%M')}", Body=b"",
+                            IfNoneMatch="*")
+    except store.s3.exceptions.ClientError as e:
+        if e.response.get("Error", {}).get("Code") in ("PreconditionFailed", "ConditionalRequestConflict"):
+            return {"skipped": "another copy already claimed this minute"}
+        raise
     if now.minute % 5 == 3:
         print("github:", dispatch_github())
-    store = S3Store(os.environ["RESULTS_BUCKET"])
     head = json.loads(store.get("chains/aws/head.json") or b"null")
-    if head and head["at"][:16] == datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M"):
-        return {"skipped": "this minute is already recorded"}    # EventBridge can deliver an invocation twice
+    if head and head["at"][:16] == now.strftime("%Y-%m-%dT%H:%M"):
+        return {"skipped": "this minute is already recorded"}
     n = run_minutes("aws", 1, store, _key, chk.aws_checks(), chk.control_check(),
                     wait=False, rounds=int(os.environ.get("PROBE_ROUNDS", "6")))
     return {"records": n}

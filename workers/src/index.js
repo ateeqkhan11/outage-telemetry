@@ -82,6 +82,7 @@ const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS runs (name TEXT PRIMARY KEY, day TEXT NOT NULL, body TEXT NOT NULL)",
   "CREATE INDEX IF NOT EXISTS runs_day ON runs (day, name)",
   "CREATE TABLE IF NOT EXISTS heads (network TEXT PRIMARY KEY, body TEXT NOT NULL)",
+  "CREATE TABLE IF NOT EXISTS claims (minute TEXT PRIMARY KEY)",
 ];
 const KEEP_DAYS = 3;
 
@@ -98,6 +99,9 @@ export async function probeMinute(env, now) {
   if (!env.AWS_ACCESS_KEY_ID || !env.AWS_SECRET_ACCESS_KEY || !env.PROBE_SIGNING_KEY) return { skipped: "secrets not set yet" };
   const db = env.DB;
   await ensureSchema(db);
+  // Cron is "at least once": claim the minute so a second copy can't fork the chain from the same head.
+  const claim = await db.prepare("INSERT OR IGNORE INTO claims (minute) VALUES (?)").bind(iso(now, true)).run();
+  if (!claim.meta.changes) return { skipped: "another copy already claimed this minute" };
   const head = await getHead(db);
   if (head && head.at && head.at.slice(0, 16) === iso(now).slice(0, 16)) return { skipped: "minute already probed" };
   const key = await loadPrivate(env.PROBE_SIGNING_KEY);
@@ -125,6 +129,7 @@ export async function probeMinute(env, now) {
     db.prepare("INSERT INTO heads (network, body) VALUES (?, ?) ON CONFLICT(network) DO UPDATE SET body = excluded.body")
       .bind(NETWORK, JSON.stringify({ seq, hash, at: iso(now) })),
     db.prepare("DELETE FROM runs WHERE day < ?").bind(cutoff),
+    db.prepare("DELETE FROM claims WHERE minute < ?").bind(cutoff),
   ]);
   return { name, records: sealed.length, seq };
 }

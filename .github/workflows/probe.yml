@@ -56,5 +56,6 @@ jobs:
           if [ -n "${{ vars.CF_PROBE_URL }}" ]; then        # copy the Cloudflare probe's results (second operator)
             python scripts/pull_cloudflare.py --url "${{ vars.CF_PROBE_URL }}" --store store || echo "cloudflare pull failed"
           fi
+          for n in aws cloudflare; do python scripts/prune_forks.py --store store --network $n || true; done
           python -m probe.status --local store --keys keys --config trigger_v1_rolling.json || echo "status build failed (probe data still saved)"
           bash scripts/data_branch.sh save store "probe github $(date -u +%Y-%m-%dT%H:%MZ)"

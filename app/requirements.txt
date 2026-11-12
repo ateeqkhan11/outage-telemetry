@@ -1,0 +1,4 @@
+# The app also imports the probe package from the repository root (PYTHONPATH=<repo>).
+flask==3.1.*
+gunicorn==23.*
+cryptography>=42

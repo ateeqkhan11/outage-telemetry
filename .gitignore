@@ -8,3 +8,4 @@ workers/node_modules/
 workers/.wrangler/
 .DS_Store
 workers/.dev.vars
+app/instance/

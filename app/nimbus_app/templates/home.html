@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="hero">
+  <div>
+    <div class="brand">PILOT PROGRAMME · AWS US-EAST-1</div>
+    <h1 style="margin-top:6px">Independent outage data for parametric cloud cover</h1>
+    <p class="lede">Probes run by different companies call AWS us-east-1 six times a minute. Every result is signed and chained, so an insurer can check a payout decision against a record nobody can quietly change, including us.</p>
+    <ul>
+      <li><b>Official calls</b>: a service is down only when two independent operators see it fail.</li>
+      <li><b>Reports</b>: official uptime, outages and per-network numbers for any period, with CSV and signed-record downloads.</li>
+      <li><b>API</b>: pull the same data into your own trigger checks.</li>
+    </ul>
+    <div class="row" style="margin-top:18px"><a href="{{ url_for('web.request_access') }}"><button type="button">Request pilot access</button></a>
+      <a href="{{ url_for('web.login') }}">Already invited? Sign in</a></div>
+  </div>
+  <aside class="panel">
+    <h2 style="font-size:18px">See it live first</h2>
+    <p style="margin:6px 0 0">The public dashboard shows today's status and lets you verify a signed record in your browser.</p>
+    <p><a href="{{ public }}" rel="noopener">Open the public dashboard</a></p>
+    <p class="muted" style="font-size:13.5px;margin:0">Pilot places are limited to a handful of firms, free during the pilot, in exchange for feedback on what the data should cover.</p>
+  </aside>
+</div>
+{% endblock %}

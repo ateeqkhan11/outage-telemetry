@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% block title %}API access · Nimbus Index{% endblock %}
+{% block body %}
+<section>
+  <h1>API access</h1>
+  <p class="lede">Pull the same official calls and signed records into your own trigger checks. Each key belongs to you; keep it on your servers, never in a browser or email.</p>
+</section>
+{% if new_key %}
+<div class="panel" style="border-color:var(--accent)">
+  <h2 style="font-size:18px">Your new key</h2>
+  <p style="margin:4px 0 10px">Copy it now. For your security it won't be shown again.</p>
+  <div class="key">{{ new_key }}</div>
+</div>
+{% endif %}
+<section>
+  <h2>Your keys</h2>
+  {% if keys %}
+  <div class="tablewrap"><table><tr><th>Name</th><th>Starts with</th><th>Created</th><th>Last used</th><th></th></tr>
+  {% for k in keys %}<tr><td>{{ k.name }}</td><td><span class="code">{{ k.prefix }}…</span></td><td class="num">{{ k.created_at | when }}</td><td class="num">{{ k.last_used_at | when }}</td>
+    <td>{% if k.revoked_at %}<span class="tag off">Revoked</span>{% else %}<form method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="revoke"><input type="hidden" name="key_id" value="{{ k.id }}"><button class="danger" type="submit">Revoke</button></form>{% endif %}</td></tr>{% endfor %}
+  </table></div>
+  {% else %}<p style="margin:0 0 10px">No keys yet.</p>{% endif %}
+  <form class="row" method="post" style="margin-top:12px">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="action" value="create">
+    <input type="text" id="key-name" name="name" placeholder="What it's for, e.g. trigger checker" maxlength="60" style="max-width:320px">
+    <button type="submit">Create key</button>
+  </form>
+</section>
+<section>
+  <h2>Endpoints</h2>
+  <p class="muted" style="margin:0 0 10px">Send the key as <span class="code">Authorization: Bearer nk_live_…</span>. Times are UTC. Up to 120 calls a minute per key.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Call</th><th>Returns</th></tr>
+    <tr><td><span class="code">GET /api/v1/status</span></td><td>Latest official state per service, 24-hour uptime, and the health of each probe network.</td></tr>
+    <tr><td><span class="code">GET /api/v1/minutes?from=2026-11-11T14:00Z&amp;to=2026-11-11T15:00Z</span></td><td>Official state of each service, minute by minute. Up to 24 hours.</td></tr>
+    <tr><td><span class="code">GET /api/v1/uptime?from=2026-11-01&amp;to=2026-11-07</span></td><td>Official uptime, outages and per-network numbers. Add <span class="code">daily=1</span> for daily rows. Up to 31 days.</td></tr>
+    <tr><td><span class="code">GET /api/v1/outages?from=2026-11-01&amp;to=2026-11-30</span></td><td>Outage events under the trigger rules, with whether each 1 h and 2 h waiting period was met.</td></tr>
+    <tr><td><span class="code">GET /api/v1/records/cloudflare/2026-11-11</span></td><td>That day's signed records from one network (JSON lines), exactly as signed.</td></tr>
+    <tr><td><span class="code">GET /api/v1/keys</span></td><td>The networks' public keys, to check every signature yourself.</td></tr>
+  </table></div>
+  <h3 style="font:600 16px var(--display);margin:18px 0 6px">Try it</h3>
+  <pre><code>curl -H "Authorization: Bearer $NIMBUS_KEY" {{ base }}/api/v1/status</code></pre>
+</section>
+{% endblock %}

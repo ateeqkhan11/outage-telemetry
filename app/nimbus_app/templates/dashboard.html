@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% block title %}Dashboard · Nimbus Index{% endblock %}
+{% block body %}
+<div class="page" style="padding:0">
+  {% if welcome %}<p class="alert ok">You're in. This is the live status; <a href="{{ url_for('web.reports_page') }}">Reports</a> covers any period, and <a href="{{ url_for('web.api_access') }}">API access</a> gets the same data into your systems.</p>{% endif %}
+  <header>
+    <div>
+      <h1>AWS us-east-1, measured independently</h1>
+      <div class="updated" id="updated">Loading the latest signed results…</div>
+    </div>
+    <span class="pill s-unknown big" id="overall">Loading</span>
+  </header>
+  <div class="notice" id="notice" hidden></div>
+  <section>
+    <h2>Services</h2>
+    <p class="muted" style="margin:0 0 12px">Each service is called 6 times a minute from every probe network. Bars show the last 24 hours in 10-minute steps; red is the share of calls that failed.</p>
+    <div class="grid" id="services"><p class="loading">Loading…</p></div>
+  </section>
+  <section>
+    <h2>Outages under the trigger rules (last 24 hours)</h2>
+    <div id="outages" class="muted">Loading…</div>
+  </section>
+  <section>
+    <h2>Probe networks</h2>
+    <div class="tablewrap"><table id="networks"><tr><th>Network</th><th>Operator</th><th>Counted</th><th>Last result</th><th>Coverage, 24 h</th><th>Longest gap</th><th>Signatures</th></tr></table></div>
+  </section>
+  <section>
+    <h2>Check it yourself</h2>
+    <div class="verify">
+      <p style="margin:0">This is the latest signed record from a probe network. Your browser recomputes its fingerprint from the content and checks the probe's signature, so you don't have to take our word for it.</p>
+      <pre id="record">Loading…</pre>
+      <details><summary class="muted" style="cursor:pointer;font-size:13.5px">Technical details</summary>
+        <p class="muted" style="font-size:13.5px;margin:8px 0 6px">The network's public key. It can only check signatures, never create them.</p>
+        <pre id="pubkey"></pre></details>
+      <div><button id="verify-btn" type="button" disabled>Verify this record</button></div>
+      <ol class="steps" id="verify-steps" hidden></ol>
+    </div>
+  </section>
+</div>
+<script src="{{ url_for('web.shared', name='dashboard.js') }}" data-src="{{ url_for('web.status_json') }}"></script>
+{% endblock %}

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}Nimbus Index{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="{{ url_for('web.shared', name='dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+<header class="bar"><div class="bar-in">
+  <a class="logo" href="{{ url_for('web.home') }}">NIMBUS<span>·</span>INDEX</a>
+  {% if me %}
+  <nav class="nav" aria-label="Main">
+    {% set here = request.endpoint %}
+    <a href="{{ url_for('web.dashboard') }}" {% if here == 'web.dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
+    <a href="{{ url_for('web.reports_page') }}" {% if here == 'web.reports_page' %}aria-current="page"{% endif %}>Reports</a>
+    <a href="{{ url_for('web.api_access') }}" {% if here == 'web.api_access' %}aria-current="page"{% endif %}>API access</a>
+    {% if me.role == 'admin' %}<a href="{{ url_for('admin.index') }}" {% if here and here.startswith('admin.') %}aria-current="page"{% endif %}>Admin</a>{% endif %}
+  </nav>
+  <div class="who"><span class="pilot">Pilot</span><a href="{{ url_for('web.account') }}">{{ me.name }}</a>
+    <form method="post" action="{{ url_for('web.logout') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="linkbtn" type="submit">Sign out</button></form></div>
+  {% else %}
+  <nav class="nav"></nav>
+  <div class="who"><a href="{{ url_for('web.login') }}">Sign in</a></div>
+  {% endif %}
+</div></header>
+<main class="page">
+{% block body %}{% endblock %}
+</main>
+</body>
+</html>

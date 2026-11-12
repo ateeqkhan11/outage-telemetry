@@ -20,18 +20,15 @@ from typing import Dict, Iterable, List, Optional
 FMT = "%Y-%m-%dT%H:%MZ"
 
 
-def minute_states(records: Iterable[dict], cfg: dict) -> Dict[str, Dict[str, str]]:
-    """{minute: {service: 'down' | 'up' | 'unknown'}}
+def round_counts(records: Iterable[dict], cfg: dict):
+    """Count checks per minute, network and service: ({minute: {network: {service: [failed, usable]}}}, minutes).
 
-    An operator fails a service when at least "window_fail_share" of its usable checks over the last
-    "window_minutes" failed (defaults 1.0 and 1: every check that minute failed). A rolling window with a lower share
-    catches partial outages, where some calls still succeed, which a single-minute rule sees as flickering.
-    Several checks a minute (probe.run --rounds) make that judgement much less noisy.
+    A network's round counts only if its control check in the same round worked; a failure counts only if its kind
+    means the service was down. `minutes` lists every minute in which a counted network sent anything (even a round
+    whose control check failed). Reference networks are skipped. The app stores these counts so it can apply the
+    rules over long periods without re-reading every record.
     """
-    ops = cfg["operators"]
     fail_kinds = set(cfg.get("fail_kinds", ["server_error", "timeout", "network", "throttled"]))
-    # minute -> operator -> service -> [failed, usable] check counts. A network's round counts only if its control
-    # check in the same round worked; a failure counts only if its kind means the service was down.
     counts: Dict[str, Dict[str, Dict[str, List[int]]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [0, 0])))
     rounds = defaultdict(dict)                                # (minute, network, at) -> {service: record}
     reference = set(cfg.get("reference_networks", []))
@@ -40,7 +37,6 @@ def minute_states(records: Iterable[dict], cfg: dict) -> Dict[str, Dict[str, str
             continue                                          # shown on the dashboard, never counted
         rounds[(r["minute"], r["network"], r.get("at", r["minute"]))][r["service"]] = r
     for (minute, net, _), res in rounds.items():
-        op = ops.get(net, net)
         ctl = res.get("control")
         if ctl is None or not ctl["ok"]:
             continue                                          # the probe itself couldn't reach the outside world
@@ -51,13 +47,25 @@ def minute_states(records: Iterable[dict], cfg: dict) -> Dict[str, Dict[str, str
             kind = r.get("kind", "ok" if r["ok"] else "server_error")
             if not r["ok"] and kind not in fail_kinds:
                 continue                                      # e.g. 403: AWS answered, so this says nothing about an outage
-            c = counts[minute][op][svc]
+            c = counts[minute][net][svc]
             c[0] += 0 if r["ok"] else 1
             c[1] += 1
-    minutes = sorted({k[0] for k in rounds})
+    return counts, sorted({k[0] for k in rounds})
+
+
+def states_from_counts(counts: Dict[str, Dict[str, Dict[str, List[int]]]], minutes: List[str], cfg: dict) -> Dict[str, Dict[str, str]]:
+    """{minute: {service: 'down' | 'up' | 'unknown'}} from per-network counts (see round_counts)."""
+    ops = cfg["operators"]
+    by_op: Dict[str, Dict[str, Dict[str, List[int]]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [0, 0])))
+    for minute, nets in counts.items():
+        for net, svcs in nets.items():
+            for svc, (f, n) in svcs.items():
+                c = by_op[minute][ops.get(net, net)][svc]
+                c[0] += f
+                c[1] += n
     window, share = int(cfg.get("window_minutes", 1)), float(cfg.get("window_fail_share", 1.0))
     need = cfg["operators_required"]
-    all_ops = sorted({op for m in counts.values() for op in m})
+    all_ops = sorted({op for m in by_op.values() for op in m})
     out: Dict[str, Dict[str, str]] = {}
     for i, minute in enumerate(minutes):
         t_now = datetime.strptime(minute, FMT)
@@ -67,14 +75,26 @@ def minute_states(records: Iterable[dict], cfg: dict) -> Dict[str, Dict[str, str
         for svc in cfg["services"]:
             fails = usable = 0
             for op in all_ops:
-                f = sum(counts[m][op][svc][0] for m in recent if op in counts[m])
-                n = sum(counts[m][op][svc][1] for m in recent if op in counts[m])
+                f = sum(by_op[m][op][svc][0] for m in recent if op in by_op[m])
+                n = sum(by_op[m][op][svc][1] for m in recent if op in by_op[m])
                 # share 1.0 (the minute rule): an operator fails only if every usable check it made failed
                 st = "unusable" if n == 0 else ("fail" if f / n >= share else "ok")
                 fails += st == "fail"
                 usable += st != "unusable"
             out[minute][svc] = "down" if fails >= need else ("unknown" if usable < need else "up")
     return out
+
+
+def minute_states(records: Iterable[dict], cfg: dict) -> Dict[str, Dict[str, str]]:
+    """{minute: {service: 'down' | 'up' | 'unknown'}}
+
+    An operator fails a service when at least "window_fail_share" of its usable checks over the last
+    "window_minutes" failed (defaults 1.0 and 1: every check that minute failed). A rolling window with a lower share
+    catches partial outages, where some calls still succeed, which a single-minute rule sees as flickering.
+    Several checks a minute (probe.run --rounds) make that judgement much less noisy.
+    """
+    counts, minutes = round_counts(records, cfg)
+    return states_from_counts(counts, minutes, cfg)
 
 
 def events(states: Dict[str, Dict[str, str]], cfg: dict, key: Optional[str] = None) -> List[dict]:

@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}Request access · Nimbus Index{% endblock %}
+{% block body %}
+<div class="narrow">
+  <h1>Request pilot access</h1>
+  <p class="lede">Tell us who you are and how you'd use outage data. We reply personally, usually within two working days.</p>
+  {% if err %}<p class="alert err">{{ err }}</p>{% endif %}
+  <form class="stack panel" method="post" style="margin-top:16px">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Name<input type="text" id="name" name="name" value="{{ form.name }}" required maxlength="120" autocomplete="name"></label>
+    <label>Work email<input type="email" id="email" name="email" value="{{ form.email }}" required maxlength="200" autocomplete="email"></label>
+    <label>Company<input type="text" id="company" name="company" value="{{ form.company }}" required maxlength="120" autocomplete="organization"></label>
+    <label>Role <small>optional</small><input type="text" id="title" name="title" value="{{ form.title }}" maxlength="120" autocomplete="organization-title"></label>
+    <label>What would you use it for? <small>optional: products, triggers, regions you care about</small><textarea id="use_case" name="use_case" maxlength="2000">{{ form.use_case }}</textarea></label>
+    <div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+    <div><button type="submit">Send request</button></div>
+  </form>
+</div>
+{% endblock %}

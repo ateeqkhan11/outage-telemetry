@@ -1,0 +1,63 @@
+{% extends "base.html" %}{% block title %}Reports · Nimbus Index{% endblock %}
+{% set names = {"s3": "S3", "dynamodb": "DynamoDB", "lambda": "Lambda", "ec2": "EC2 API", "sts": "STS"} %}
+{% block body %}
+<section>
+  <h1>Reports</h1>
+  <p class="lede">Official uptime and outages under trigger rules <span class="code">{{ cfg.version }}</span>, plus what each probe network saw. All times UTC.</p>
+</section>
+<form class="panel" method="get" action="{{ url_for('web.reports_page') }}">
+  <div class="filters">
+    <label>From<input type="date" id="from" name="from" value="{{ rep.from if rep else args.get('from', '') }}"></label>
+    <label>To<input type="date" id="to" name="to" value="{{ rep.to if rep else args.get('to', '') }}"></label>
+    <fieldset><legend>Services</legend><div class="checks">
+      {% for s in cfg.services %}<label><input type="checkbox" name="service" value="{{ s }}" {% if not args.getlist('service') or s in args.getlist('service') %}checked{% endif %}>{{ names.get(s, s) }}</label>{% endfor %}
+    </div></fieldset>
+    <fieldset><legend>Probe networks</legend><div class="checks">
+      {% for n in all_networks %}<label><input type="checkbox" name="network" value="{{ n }}" {% if not args.getlist('network') or n in args.getlist('network') %}checked{% endif %}>{{ n }}</label>{% endfor %}
+    </div></fieldset>
+    <div><button type="submit">Run report</button></div>
+  </div>
+  <p class="muted" style="font-size:13px;margin:10px 0 0">Up to {{ max_days }} days at a time. Network choices change the per-network numbers only; official calls always use every counted network.</p>
+</form>
+{% if err %}<p class="alert err">{{ err }}</p>{% endif %}
+{% if rep %}
+<section>
+  <div class="row" style="justify-content:space-between">
+    <h2 style="margin:0">{{ rep.from }} to {{ rep.to }}</h2>
+    <a href="{{ url_for('web.reports_csv', **request.args.to_dict(flat=False)) if request.args else url_for('web.reports_csv', **{'from': rep.from, 'to': rep.to}) }}"><button type="button" class="secondary">Download CSV (daily rows)</button></a>
+  </div>
+  <p class="muted" style="margin:6px 0 14px">{{ "{:,}".format(rep.minutes_judged) }} of {{ "{:,}".format(rep.minutes_in_range) }} minutes so far had data. Official uptime counts only minutes when at least {{ cfg.operators_required }} independent operators could judge; the rest are "undecided". Two independent operators have been live since 11 November 2026, 23:18 UTC.</p>
+  <div class="tiles">
+    {% for s, v in rep.summary.items() %}
+    <div class="tile"><h3>{{ names.get(s, s) }}</h3>
+      <div class="big">{{ v.official_uptime_pct | pct }}</div><small>official uptime, over {{ "{:,}".format(v.judged_minutes) }} judged minutes</small>
+      <small style="margin-top:8px">{{ v.down_minutes }} min down · {{ "{:,}".format(v.undecided_minutes) }} min undecided</small></div>
+    {% endfor %}
+  </div>
+</section>
+<section>
+  <h2>Outages under the trigger rules</h2>
+  {% if rep.outages %}
+  <div class="tablewrap"><table><tr><th>Start</th><th>End</th><th class="num">Length</th><th>Services</th>{% for w in cfg.waiting_periods_min %}<th>{{ w // 60 }} h wait met</th>{% endfor %}</tr>
+  {% for o in rep.outages %}<tr><td class="num">{{ o.start }}</td><td class="num">{{ "ongoing" if o.ongoing else o.end }}</td><td class="num">{{ o.duration_min }} min</td>
+    <td>{{ o.services | join(", ") }}</td>{% for w in cfg.waiting_periods_min %}<td>{% if o.meets_waiting_period[w|string] %}<span class="bad">Yes</span>{% else %}No{% endif %}</td>{% endfor %}</tr>{% endfor %}</table></div>
+  {% else %}<p style="margin:0">None in this period. No service failed for {{ cfg.operators_required }} independent operators at once.</p>{% endif %}
+</section>
+<section>
+  <h2>What each probe network saw</h2>
+  <div class="tablewrap"><table>
+    <tr><th>Service</th>{% for n, nv in rep.networks.items() %}<th class="num">{{ n }}{% if not nv.counted %} (reference){% endif %}</th>{% endfor %}</tr>
+    {% for s, v in rep.summary.items() %}<tr><td><b>{{ names.get(s, s) }}</b></td>
+      {% for n in rep.networks %}{% set x = v.networks[n] %}<td class="num">{{ x.ok_pct | pct(2) }} OK<br><span class="muted">{{ "{:,}".format(x.checks) }} calls · {{ x.failed }} failed · {{ x.avg_latency_ms or "—" }} ms avg</span></td>{% endfor %}</tr>{% endfor %}
+    <tr><td><b>Coverage</b></td>{% for n, nv in rep.networks.items() %}<td class="num">{{ nv.coverage_pct | pct(1) }} of minutes<br><span class="muted">{{ nv.operator }}</span></td>{% endfor %}</tr>
+  </table></div>
+</section>
+<section>
+  <h2>Signed records</h2>
+  <p class="muted" style="margin:0 0 10px">Every call, exactly as signed by the probe network, one file per network per day (JSON lines). Check them with the public keys under API access, or <span class="code">python -m probe.verify</span>.</p>
+  <div class="tablewrap"><table><tr><th>Day</th>{% for n in rep.networks %}<th>{{ n }}</th>{% endfor %}</tr>
+  {% for d in rep.daily | map(attribute='date') | unique | list | reverse %}<tr><td class="num">{{ d }}</td>{% for n in rep.networks %}<td><a href="{{ url_for('web.records', network=n, day=d) }}">Download</a></td>{% endfor %}</tr>{% endfor %}
+  </table></div>
+</section>
+{% endif %}
+{% endblock %}

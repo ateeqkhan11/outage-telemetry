@@ -26,6 +26,13 @@ case "$EMAIL" in *"{net}"*) ;; *) echo "EMAIL must contain {net} so each account
 NETWORKS=${NETWORKS:-"github cloudflare"}
 SETUP_URL=${SETUP_URL:-https://raw.githubusercontent.com/ateeqkhan11/outage-telemetry/main/infra/aws/setup.sh}
 MAIN=$(aws sts get-caller-identity --query Account --output text)
+ME=$(aws sts get-caller-identity --query Arn --output text)
+case "$ME" in *":root")
+  echo "You are signed in as the account's root user, and AWS does not let root step into other accounts."
+  echo "Sign in to the console as an IAM user or role with admin rights (IAM -> Users -> create one with"
+  echo "AdministratorAccess if needed), open CloudShell again, and rerun this script."
+  exit 1;;
+esac
 REF_BUCKET=${REF_BUCKET:-outage-probe-ref-$MAIN}
 say() { printf '\n== %s\n' "$*"; }
 
@@ -63,24 +70,33 @@ for net in $NETWORKS; do
   fi
   echo "Account id $id"
 
-  # act inside the new account through the role Organizations created there
+  # act inside the new account through the role Organizations created there. Never fall back to this account.
+  role="arn:aws:iam::$id:role/OrganizationAccountAccessRole"
   creds() {
-    aws sts assume-role --role-arn "arn:aws:iam::$id:role/OrganizationAccountAccessRole" --role-session-name nimbus-setup \
+    aws sts assume-role --role-arn "$role" --role-session-name nimbus-setup \
       --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text
   }
-  for i in $(seq 1 12); do c=$(creds 2>/dev/null) && break; echo "waiting for the new account's role..."; sleep 10; done
+  c=""
+  for i in $(seq 1 30); do
+    if c=$(creds 2>/tmp/assume.err); then break; fi
+    c=""; echo "waiting for the new account's role ($i/30): $(tail -1 /tmp/assume.err)"; sleep 10
+  done
+  [ -n "$c" ] || { echo "Could not step into $name ($id). Last error above. Nothing was changed in it; rerun later."; exit 1; }
   read -r AK SK ST <<<"$c"
+  inside() { AWS_ACCESS_KEY_ID=$AK AWS_SECRET_ACCESS_KEY=$SK AWS_SESSION_TOKEN=$ST "$@"; }
+  got=$(inside aws sts get-caller-identity --query Account --output text)
+  [ "$got" = "$id" ] || { echo "Safety stop: expected account $id but credentials are for $got."; exit 1; }
   # new accounts can take a few minutes before every service accepts calls; setup.sh is safe to repeat
   for i in 1 2 3 4 5; do
-    if AWS_ACCESS_KEY_ID=$AK AWS_SECRET_ACCESS_KEY=$SK AWS_SESSION_TOKEN=$ST bash /tmp/nimbus-setup.sh; then break; fi
+    if inside bash /tmp/nimbus-setup.sh; then break; fi
     [ "$i" = 5 ] && { echo "setup.sh kept failing in $name; run this script again later."; exit 1; }
     echo "retrying in 60 s (new accounts need a few minutes to activate S3 and Lambda)"; sleep 60
-    for j in $(seq 1 6); do c=$(creds 2>/dev/null) && break; sleep 10; done; read -r AK SK ST <<<"$c"
+    c=$(creds) && read -r AK SK ST <<<"$c"
   done
 
-  if [ "$net" = "github" ] && aws s3api head-bucket --bucket "$REF_BUCKET" 2>/dev/null; then
+  if [ "$net" = "github" ] && aws s3api head-bucket --bucket "$REF_BUCKET" >/dev/null 2>&1; then
     say "Let $name's probe user read the reference results ($REF_BUCKET)"
-    AWS_ACCESS_KEY_ID=$AK AWS_SECRET_ACCESS_KEY=$SK AWS_SESSION_TOKEN=$ST aws iam put-user-policy --user-name outage-probe \
+    inside aws iam put-user-policy --user-name outage-probe \
       --policy-name read-reference --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[
         {\"Effect\":\"Allow\",\"Action\":\"s3:ListBucket\",\"Resource\":\"arn:aws:s3:::$REF_BUCKET\"},
         {\"Effect\":\"Allow\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::$REF_BUCKET/*\"}]}"

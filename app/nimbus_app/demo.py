@@ -48,17 +48,21 @@ def scenario(start: datetime, now: datetime):
     """Simulated incidents. Offsets in days from the start of the period keep the shape whatever the run date."""
     def at(day, hh, mm):
         return start + timedelta(days=day, hours=hh, minutes=mm)
-    outages = [  # (when, {service: (fail share, starts after min, lasts min)}, networks affected or None = all)
-        (at(19, 14, 12), {"s3": (0.35, 0, 38)}, None),                                         # partial S3 errors
-        (at(43, 9, 41), {"sts": (0.9, 0, 12)}, None),                                          # short STS blip
-        (at(65, 18, 5), {"dynamodb": (0.8, 0, 167), "lambda": (0.55, 6, 175)}, None),          # DynamoDB, Lambda follows
-        (at(98, 3, 30), {"ec2": (0.6, 0, 95)}, None),                                          # EC2 API, night
-        (at(123, 22, 48), {"lambda": (0.4, 0, 64)}, None),                                     # Lambda, partial
-        (at(152, 11, 20), {"dynamodb": (0.95, 0, 250), "lambda": (0.7, 5, 280), "ec2": (0.5, 40, 200),
-                           "sts": (0.3, 20, 90)}, None),                                       # the big one
-        (at(171, 16, 20), {"s3": (0.5, 0, 7)}, None),                                          # 7-minute blip
-        (now - timedelta(hours=9, minutes=14), {"s3": (0.3, 0, 9)}, None),                     # yesterday-ish, small
-        (at(50, 13, 0), {"dynamodb": (0.7, 0, 25)}, {"gcp"}),                                  # one operator alone
+    # (when, {service: [(fail share, starts after min, lasts min), ...]}, networks affected or None = all).
+    # Several phases per service give outages a hard-down core and a degraded tail, like us-east-1 on 20 Oct 2025.
+    outages = [
+        (at(19, 14, 12), {"s3": [(0.35, 0, 38)]}, None),                                       # partial S3 errors
+        (at(43, 9, 41), {"sts": [(0.97, 0, 12)]}, None),                                       # short STS blip, hard down
+        (at(65, 18, 5), {"dynamodb": [(0.97, 0, 70), (0.5, 70, 97)],
+                         "lambda": [(0.55, 6, 175)]}, None),                                   # DynamoDB, Lambda follows
+        (at(98, 3, 30), {"ec2": [(0.6, 0, 95)]}, None),                                        # EC2 API, night
+        (at(123, 22, 48), {"lambda": [(0.4, 0, 64)]}, None),                                   # Lambda, partial
+        (at(152, 11, 20), {"dynamodb": [(0.98, 0, 150), (0.45, 150, 100)],
+                           "lambda": [(0.95, 5, 140), (0.5, 145, 140)],
+                           "ec2": [(0.5, 40, 200)], "sts": [(0.3, 20, 90)]}, None),            # the big one
+        (at(171, 16, 20), {"s3": [(0.5, 0, 7)]}, None),                                        # 7-minute blip
+        (now - timedelta(hours=9, minutes=14), {"s3": [(0.3, 0, 9)]}, None),                   # yesterday-ish, small
+        (at(50, 13, 0), {"dynamodb": [(0.97, 0, 25)]}, {"gcp"}),                               # one operator alone
     ]
     gaps = [("cloudflare", at(86, 1, 0), 190), ("github", at(134, 7, 15), 42), ("gcp", at(160, 20, 0), 75)]
     return outages, gaps
@@ -72,10 +76,10 @@ class Truth:
     def share(self, net, t, svc):
         for when, svcs, nets in self.outages:
             if svc in svcs and (nets is None or net in nets):
-                sh, off, mins = svcs[svc]
-                a = when + timedelta(minutes=off)
-                if a <= t < a + timedelta(minutes=mins):
-                    return sh
+                for sh, off, mins in svcs[svc]:
+                    a = when + timedelta(minutes=off)
+                    if a <= t < a + timedelta(minutes=mins):
+                        return sh
         return 0.0
 
     def gap(self, net, t):
@@ -133,7 +137,8 @@ def signed_files(truth: Truth, a: datetime, b: datetime, data_dir: Path, keys: d
                 for svc, op, sh in checks:
                     bad = rng.random() < (sh or BASE_FAIL)
                     kind = rng.choice(["server_error", "timeout"]) if bad else "ok"
-                    rec = {"v": 1, "network": net, "host": host, "target": "us-east-1", "service": svc, "op": op,
+                    rec = {"v": 1, "network": net, "host": host, "target": "us-east-1", "account": f"nimbus-target-{net}" if net != "aws" else "reference",
+                           "service": svc, "op": op,
                            "minute": m, "at": at, "ok": not bad, "kind": kind,
                            "latency_ms": 5000 if kind == "timeout" else truth.latency(net, svc, bad),
                            "error": ("HTTP 503 Service Unavailable" if kind == "server_error" else "timed out after 5 s") if bad else None,

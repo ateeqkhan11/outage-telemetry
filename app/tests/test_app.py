@@ -2,6 +2,7 @@
 import json
 import re
 import sys
+from html import unescape as html_unescape
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -203,7 +204,8 @@ def test_history_matches_the_minute_rule(env):
     from nimbus_app.db import connect
     db = connect(app.config["DB_PATH"])
     d = datetime(2026, 11, 10).date()
-    assert db.execute("SELECT COUNT(*) FROM daily_states WHERE day = ?", (DAY,)).fetchone()[0] == 6   # rolled up by ingest
+    assert db.execute("SELECT COUNT(*) FROM daily_states WHERE day = ? AND definition = 'degraded'", (DAY,)).fetchone()[0] == 6
+    assert db.execute("SELECT COUNT(DISTINCT definition) FROM daily_states WHERE day = ?", (DAY,)).fetchone()[0] == 2
     ov = history.overview(db, CFG, d, d)
     direct = detect(recs, CFG)["region"]
     assert len(ov["outages"]) == 1
@@ -260,3 +262,63 @@ def test_history_page(env):
     key = re.search(r"(nk_live_[\w-]+)", page).group(1)
     h = app.test_client().get("/api/v1/history?from=2026-11-10&to=2026-11-10", headers={"Authorization": f"Bearer {key}"}).get_json()
     assert len(h["outages"]) == 1 and h["uptime"]["s3"]["down_minutes"] > 0 and len(h["daily"]) == 5
+
+
+
+def test_hard_down_and_degraded_differ(env):
+    """The fixture's S3 fails 100% on two companies for 30 minutes: both definitions call it, hard-down tighter."""
+    app, recs, _ = env
+    from nimbus_app import history, reports
+    from nimbus_app.db import connect
+    db = connect(app.config["DB_PATH"])
+    d = datetime(2026, 11, 10).date()
+    deg = history.overview(db, CFG, d, d, "degraded")["outages"]
+    hard = history.overview(db, CFG, d, d, "hard_down")["outages"]
+    assert len(deg) == 1 and len(hard) == 1
+    assert hard[0]["duration_min"] <= deg[0]["duration_min"]
+    direct = detect(recs, reports.definition_cfg(CFG, "hard_down"))["region"]       # same rule, straight from records
+    assert (hard[0]["start"], hard[0]["end"]) == (direct[0]["start"], direct[0]["end"])
+    assert reports.report(db, CFG, d, d, definition="hard_down")["outages"][0]["start"] == direct[0]["start"]
+
+
+def test_replay_terms():
+    """Merge window, rounding, waiting period and limits, on hand-made stretches."""
+    import sqlite3
+    from nimbus_app import db as dbm, history
+    con = sqlite3.connect(":memory:", isolation_level=None)
+    con.row_factory = sqlite3.Row
+    con.executescript(dbm.SCHEMA)
+    rows = [("2026-07-01", "hard_down", "*", "down", "2026-07-01T10:00Z", "2026-07-01T10:52Z"),   # 53 min
+            ("2026-07-01", "hard_down", "s3", "down", "2026-07-01T10:00Z", "2026-07-01T10:52Z"),
+            ("2026-07-01", "hard_down", "*", "down", "2026-07-01T11:10Z", "2026-07-01T12:11Z"),   # 62 min, 17 min gap
+            ("2026-07-01", "hard_down", "s3", "down", "2026-07-01T11:10Z", "2026-07-01T12:11Z"),
+            ("2026-07-01", "hard_down", "*", "down", "2026-07-01T18:00Z", "2026-07-01T21:59Z"),   # 240 min, separate
+            ("2026-07-01", "hard_down", "dynamodb", "down", "2026-07-01T18:00Z", "2026-07-01T21:59Z")]
+    con.executemany("INSERT INTO state_runs (day, definition, service, state, start, end) VALUES (?, ?, ?, ?, ?, ?)", rows)
+    d = datetime(2026, 7, 1).date()
+    r = history.replay(con, CFG, d, d, {"definition": "hard_down", "waiting_min": 60, "hourly": 6000, "merge_gap_min": 30,
+                                        "rounding_min": 5, "event_limit": 15000, "aggregate_limit": 20000})
+    a, b = r["events"]
+    assert len(a["parts"]) == 2 and a["minutes"] == 55 + 65          # rounded up to 5 min each, gap not counted
+    assert a["indemnity_min"] == 60 and a["payout"] == 6000          # one waiting period for the merged event
+    assert b["indemnity_min"] == 180 and b["payout"] == 14000 and b["capped"]   # 18,000 capped by what's left of 20,000
+    only_s3 = history.replay(con, CFG, d, d, {"definition": "hard_down", "services": ["s3"], "waiting_min": 60})
+    assert len(only_s3["events"]) == 1                               # the DynamoDB outage is not insured
+    split = history.replay(con, CFG, d, d, {"definition": "hard_down", "merge_gap_min": 10, "waiting_min": 0})
+    assert len(split["events"]) == 3
+
+
+def test_certificate_signed_and_checkable(env):
+    app, _, tmp = env
+    c = app.test_client()
+    invite_and_join(app, c)
+    page = c.get("/policy?from=2026-11-10&to=2026-11-10&def=degraded&waiting_min=0").get_data(as_text=True)
+    assert "Would have paid" in page
+    link = html_unescape(re.search(r'href="(/certificate\?[^"]+)"', page).group(1))
+    assert "Signed by Nimbus Index" in c.get(link).get_data(as_text=True)
+    cert = json.loads(c.get(link + "&format=json").get_data(as_text=True))
+    from nimbus_app import certificates
+    assert certificates.verify(cert) and cert["policy"]["payout"] > 0
+    assert set(cert["evidence"]) == {"github", "cloudflare", "aws"}
+    tampered = dict(cert, outage=dict(cert["outage"], minutes=cert["outage"]["minutes"] + 60))
+    assert not certificates.verify(tampered)

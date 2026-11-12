@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import re
 from pathlib import Path
 
 from flask import (Blueprint, Response, abort, current_app, g, make_response, redirect, render_template, request,
                    send_from_directory, url_for)
 
-from . import auth, data, history, reports
+from . import auth, certificates, data, history, reports
 from .db import get_db, log, now
 
 bp = Blueprint("web", __name__)
@@ -137,14 +138,72 @@ def history_page():
     cfg = current_app.config["RULES"]
     days = request.args.get("days", 180, type=int)
     days = days if days in dict(PERIODS) else 180
-    err = ov = None
+    definition = reports.pick_definition(cfg, request.args.get("def"))
+    err = ov = other = None
     try:
         d_from, d_to = history.parse_period(request.args.get("from"), request.args.get("to"), days)
-        ov = history.overview(get_db(), cfg, d_from, d_to)
-        log("history", f"{d_from}..{d_to}", user_id=g.user["id"])
+        ov = history.overview(get_db(), cfg, d_from, d_to, definition)
+        alt = next(n for n in reports.definitions(cfg) if n != definition) if len(reports.definitions(cfg)) > 1 else None
+        other = history.overview(get_db(), cfg, d_from, d_to, alt) if alt else None
+        log("history", f"{d_from}..{d_to} {definition}", user_id=g.user["id"])
     except reports.BadRange as e:
         err = str(e)
-    return render_template("history.html", ov=ov, err=err, cfg=cfg, periods=PERIODS, days=days)
+    return render_template("history.html", ov=ov, other=other, err=err, cfg=cfg, periods=PERIODS, days=days,
+                           definition=definition, defs=reports.definitions(cfg))
+
+
+def _terms_from(args, cfg):
+    """Policy terms from a query string; blanks fall back to the example defaults."""
+    t = {"definition": reports.pick_definition(cfg, args.get("def") or "hard_down"),
+         "services": [s for s in args.getlist("service") if s in cfg["services"]] or list(cfg["services"])}
+    for k, lo, hi in (("waiting_min", 0, 1440), ("hourly", 0, 10_000_000), ("merge_gap_min", 0, 1440),
+                      ("rounding_min", 1, 60), ("event_limit", 0, 1_000_000_000), ("aggregate_limit", 0, 1_000_000_000)):
+        v = args.get(k, type=int)
+        t[k] = history.TERM_DEFAULTS[k] if v is None else max(lo, min(hi, v))
+    return t
+
+
+@bp.get("/policy")
+@auth.login_required
+def policy_page():
+    cfg = current_app.config["RULES"]
+    terms = _terms_from(request.args, cfg)
+    err = res = compare = None
+    try:
+        d_from, d_to = history.parse_period(request.args.get("from"), request.args.get("to"), 180)
+        res = history.replay(get_db(), cfg, d_from, d_to, terms)
+        compare = {n: history.replay(get_db(), cfg, d_from, d_to, dict(terms, definition=n))
+                   for n in reports.definitions(cfg)}
+        if request.args:
+            log("policy", f"{d_from}..{d_to} {terms['definition']} wait {terms['waiting_min']}", user_id=g.user["id"])
+    except reports.BadRange as e:
+        err = str(e)
+    return render_template("policy.html", res=res, compare=compare, terms=terms, err=err, cfg=cfg,
+                           defs=reports.definitions(cfg), args=request.args)
+
+
+@bp.get("/certificate")
+@auth.login_required
+def certificate():
+    """A signed certificate for one event of a policy replay: ?from&to&def&service...&<terms>&event=<start minute>."""
+    cfg = current_app.config["RULES"]
+    terms = _terms_from(request.args, cfg)
+    try:
+        d_from, d_to = history.parse_period(request.args.get("from"), request.args.get("to"), 180)
+    except reports.BadRange as e:
+        abort(400, str(e))
+    res = history.replay(get_db(), cfg, d_from, d_to, terms)
+    ev = next((e for e in res["events"] if e["start"] == request.args.get("event")), None)
+    if ev is None:
+        abort(404, "No outage starts at that minute under these terms.")
+    cert = certificates.build(cfg, current_app.config["DATA_DIR"], current_app.instance_path, ev, res["definition"],
+                              res["services"], terms=res["terms"], payout=ev, demo=current_app.config["DEMO"])
+    log("certificate", f"{res['definition']} {ev['start']}", user_id=g.user["id"])
+    if request.args.get("format") == "json":
+        name = f"nimbus-certificate-{res['definition']}-{ev['start'].replace(':', '')}.json"
+        return Response(json.dumps(cert, indent=2), mimetype="application/json",
+                        headers={"Content-Disposition": f'attachment; filename="{name}"'})
+    return render_template("certificate.html", cert=cert, ok=certificates.verify(cert), args=request.args)
 
 
 def _report_args():
@@ -152,7 +211,7 @@ def _report_args():
     d_from, d_to = reports.parse_days(request.args.get("from"), request.args.get("to"))
     services = request.args.getlist("service") or None
     nets = request.args.getlist("network") or None
-    return cfg, d_from, d_to, services, nets
+    return cfg, d_from, d_to, services, nets, reports.pick_definition(cfg, request.args.get("def"))
 
 
 @bp.get("/reports")
@@ -161,24 +220,24 @@ def reports_page():
     cfg = current_app.config["RULES"]
     err, rep = None, None
     try:
-        cfg, d_from, d_to, services, nets = _report_args()
-        rep = reports.report(get_db(), cfg, d_from, d_to, services, nets)
+        cfg, d_from, d_to, services, nets, definition = _report_args()
+        rep = reports.report(get_db(), cfg, d_from, d_to, services, nets, definition)
         if request.args:
             log("report", f"{d_from}..{d_to}", user_id=g.user["id"])
     except reports.BadRange as e:
         err = str(e)
     return render_template("reports.html", rep=rep, err=err, cfg=cfg, all_networks=data.networks(),
-                           args=request.args, max_days=reports.MAX_REPORT_DAYS)
+                           args=request.args, max_days=reports.MAX_REPORT_DAYS, defs=reports.definitions(cfg))
 
 
 @bp.get("/reports.csv")
 @auth.login_required
 def reports_csv():
     try:
-        cfg, d_from, d_to, services, nets = _report_args()
+        cfg, d_from, d_to, services, nets, definition = _report_args()
     except reports.BadRange as e:
         abort(400, str(e))
-    rep = reports.report(get_db(), cfg, d_from, d_to, services, nets)
+    rep = reports.report(get_db(), cfg, d_from, d_to, services, nets, definition)
     buf = io.StringIO()
     w = csv.DictWriter(buf, fieldnames=reports.CSV_FIELDS)
     w.writeheader()
@@ -287,3 +346,9 @@ COMPANIES = {"microsoft": "Microsoft", "cloudflare": "Cloudflare", "google": "Go
 @bp.app_template_filter("company")
 def company(op):
     return COMPANIES.get(op, op)
+
+
+
+@bp.app_template_filter("money")
+def money(v):
+    return "$" + "{:,}".format(int(v or 0))

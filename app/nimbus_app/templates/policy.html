@@ -1,0 +1,62 @@
+{% extends "base.html" %}{% block title %}Policy check · Nimbus Index{% endblock %}
+{% block band %}
+<section class="band"><div class="band-in">
+  <div>
+    <h1>Policy check</h1>
+    <p class="lede">Replay a parametric policy's terms against the outage record: which outages it would have paid for, how much, and a signed certificate for each.</p>
+  </div>
+</div></section>
+{% endblock %}
+{% block body %}
+<form class="panel" method="get" action="{{ url_for('web.policy_page') }}">
+  <div class="panel-head"><div><h2>Terms</h2><p>Defaults are example terms in the style of current cloud-outage policies: hard-down outages, a 2-hour waiting period, outages within 30 minutes merged, lengths rounded up to 5 minutes.</p></div></div>
+  <div class="panel-body terms-form">
+    <label>Definition<select id="def" name="def">{% for k, d in defs.items() %}<option value="{{ k }}" {% if terms.definition == k %}selected{% endif %}>{{ d.label }}</option>{% endfor %}</select></label>
+    <label>Waiting period <small>minutes</small><input type="number" id="waiting_min" name="waiting_min" min="0" max="1440" value="{{ terms.waiting_min }}"></label>
+    <label>Amount per hour <small>USD</small><input type="number" id="hourly" name="hourly" min="0" step="1000" value="{{ terms.hourly }}"></label>
+    <label>Merge outages within <small>minutes</small><input type="number" id="merge_gap_min" name="merge_gap_min" min="0" max="1440" value="{{ terms.merge_gap_min }}"></label>
+    <label>Round lengths up to <small>minutes</small><input type="number" id="rounding_min" name="rounding_min" min="1" max="60" value="{{ terms.rounding_min }}"></label>
+    <label>Limit per event <small>USD</small><input type="number" id="event_limit" name="event_limit" min="0" step="10000" value="{{ terms.event_limit }}"></label>
+    <label>Aggregate limit <small>USD</small><input type="number" id="aggregate_limit" name="aggregate_limit" min="0" step="10000" value="{{ terms.aggregate_limit }}"></label>
+    <label>From<input type="date" id="from" name="from" value="{{ res.from if res else args.get('from', '') }}"></label>
+    <label>To<input type="date" id="to" name="to" value="{{ res.to if res else args.get('to', '') }}"></label>
+    <fieldset class="span-all"><legend>Insured services <small>an outage of any one of them counts</small></legend><div class="checks">
+      {% for s in cfg.services %}<label><input type="checkbox" name="service" value="{{ s }}" {% if s in terms.services %}checked{% endif %}>{{ s | svcname }}</label>{% endfor %}
+    </div></fieldset>
+    <div class="span-all"><button type="submit">Run check</button></div>
+  </div>
+</form>
+{% if err %}<p class="alert err">{{ err }}</p>{% endif %}
+{% if res %}
+<section class="panel" aria-labelledby="res-h">
+  <div class="panel-head"><h2 id="res-h">Result</h2><span class="muted tnum">{{ res.from | longdate }} to {{ res.to | longdate }}</span></div>
+  <table class="deftable">
+    <tr class="attach"><th scope="row"><dfn>Would have paid</dfn></th><td><b class="figure-sm">{{ res.total | money }}</b> across {{ res.paying_events }} of {{ res.events | length }} outage{{ 's' if res.events | length != 1 }}</td></tr>
+    <tr><th scope="row"><dfn>Definition</dfn></th><td><b>{{ defs[res.definition].label }}</b>: {{ defs[res.definition].description }}</td></tr>
+    {% for k, c in compare.items() if k != res.definition %}
+    <tr><th scope="row"><dfn>Same terms, {{ defs[k].label | lower }}</dfn></th><td><b class="figure-sm">{{ c.total | money }}</b> across {{ c.paying_events }} of {{ c.events | length }} outage{{ 's' if c.events | length != 1 }}
+      <span class="cell-sub">The definition alone changes the payout. <a href="{{ url_for('web.policy_page', **dict(args.to_dict(flat=False), def=k)) }}">Show these outages</a></span></td></tr>
+    {% endfor %}
+    <tr><th scope="row"><dfn>Insured services</dfn></th><td>{{ res.services | map('svcname') | join(', ') }}</td></tr>
+    <tr><th scope="row"><dfn>Payout rule</dfn></th><td>{{ res.terms.hourly | money }} per hour × (length − {{ res.terms.waiting_min | dur }} waiting period), lengths rounded up to {{ res.terms.rounding_min }} minutes, outages within {{ res.terms.merge_gap_min }} minutes merged into one event; up to {{ res.terms.event_limit | money }} per event and {{ res.terms.aggregate_limit | money }} in all.</td></tr>
+  </table>
+</section>
+<section class="panel" aria-labelledby="ev-h">
+  <div class="panel-head"><div><h2 id="ev-h">Events</h2><p>Each event comes with a certificate signed by Nimbus Index, listing the rule, the times and the signed probe records behind it.</p></div></div>
+  {% if res.events %}
+  <div class="tablewrap"><table class="stack-table">
+    <thead><tr><th>Start</th><th>End</th><th>Services</th><th class="num">Length</th><th class="num">Paid hours</th><th class="num">Payout</th><th></th></tr></thead>
+    {% for e in res.events | reverse %}<tr>
+      <td class="tnum nowrap"><b>{{ e.start[:10] | longdate }}</b><span class="cell-sub">{{ e.start[11:16] }} UTC{% if e.parts | length > 1 %} · {{ e.parts | length }} outages merged{% endif %}</span></td>
+      <td class="tnum nowrap" data-label="End">{{ 'ongoing' if e.ongoing else e.end[11:16] ~ ' UTC' }}</td>
+      <td data-label="Services">{{ e.services | map('svcname') | join(', ') }}</td>
+      <td class="num" data-label="Length">{{ e.minutes | dur }}</td>
+      <td class="num" data-label="Paid hours">{% if e.indemnity_min %}{{ e.indemnity_min | dur }}{% else %}<span class="muted">within waiting period</span>{% endif %}</td>
+      <td class="num" data-label="Payout"><b>{{ e.payout | money }}</b>{% if e.capped %}<span class="cell-sub">limit reached</span>{% endif %}</td>
+      <td data-label="Certificate"><a href="{{ url_for('web.certificate', **dict(args.to_dict(flat=False), event=e.start, def=res.definition, **{'from': res.from, 'to': res.to})) }}">Certificate</a></td>
+    </tr>{% endfor %}
+  </table></div>
+  {% else %}<p class="ladder-empty">No outage was called under this definition in the period.</p>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

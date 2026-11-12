@@ -70,7 +70,8 @@ export async function probeOnce(env, now = new Date()) {
   const list = checks(env, aws);
   const results = await Promise.all(list.map(([, , fn]) => runCheck(fn)));
   const host = ascii(`cloudflare-workers ${env.CF_COLO || ""}`.trim(), 80);
-  return list.map(([service, op], i) => ({ v: 1, network: NETWORK, host, target: REGION, service, op,
+  const account = env.TARGET_ACCOUNT ? { account: ascii(env.TARGET_ACCOUNT, 40) } : {};
+  return list.map(([service, op], i) => ({ v: 1, network: NETWORK, host, target: REGION, ...account, service, op,
     minute: iso(now, true), at: iso(now), ...results[i] }));
 }
 

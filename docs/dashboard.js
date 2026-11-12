@@ -65,7 +65,8 @@
     $("judges").innerHTML = `<ul>${counted.map(([n, v]) => `<li>${esc(company(v.operator))} <small>${esc(n)} probes</small></li>`).join("")}
       ${ref.map(([n]) => `<li class="ref">AWS reference <small>${esc(n)}, shown, never counted</small></li>`).join("")}</ul>
       <span class="seal ${valid ? "" : "bad"}">${SEAL}${valid ? `Signed · ${nets.length} chains valid` : "A chain failed its check"}</span>`;
-    $("judges-note").textContent = s.can_decide
+    const shared = (s.shared_target_accounts || []).length;
+    $("judges-note").textContent = shared ? `Warning: two counted networks call the same test account (${s.shared_target_accounts.join(", ")}).` : s.can_decide
       ? `Down only when ${s.rules.operators_required} of these companies see it fail: ${Math.round(s.rules.window_fail_share * 100)}% of calls over ${s.rules.window_minutes} min.`
       : `Official calls need ${s.rules.operators_required} independent companies; ${s.independent_operators.length} live now.`;
 
@@ -94,7 +95,7 @@
                    : "None can be called yet: this needs a second independent company. Raw failures show as red bars above.");
 
     $("networks").innerHTML = nets.map(([net, v]) => `<tr><td><b>${esc(net)}</b><span class="cell-sub">${esc(v.host || "")}</span></td>
-      <td data-label="Company">${esc(v.counted ? company(v.operator) : "AWS (reference)")}</td><td data-label="Counted">${v.counted ? "Yes" : "No, inside AWS"}</td><td class="num" data-label="Last result">${v.last_minute ? ago(v.last_minute) : "—"}</td>
+      <td data-label="Company">${esc(v.counted ? company(v.operator) : "AWS (reference)")}</td><td data-label="Counted">${v.counted ? "Yes" : "No, inside AWS"}</td><td data-label="Test account">${v.account ? esc(v.account) : '<span class="muted">shared (original)</span>'}</td><td class="num" data-label="Last result">${v.last_minute ? ago(v.last_minute) : "—"}</td>
       <td class="num" data-label="Coverage, 24 h">${(100 * v.minutes_covered / v.minutes_in_window).toFixed(1)}%</td><td class="num" data-label="Longest gap">${v.longest_gap_min} min</td>
       <td data-label="Signatures">${v.chain_valid ? '<span class="ok">Valid</span>' : `<span class="bad">Invalid</span> <span class="err">${esc(v.problems[0] || "")}</span>`}</td></tr>`).join("");
 

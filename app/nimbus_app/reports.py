@@ -14,6 +14,27 @@ class BadRange(ValueError):
     pass
 
 
+def definitions(cfg: dict) -> Dict[str, dict]:
+    """The outage definitions in the trigger rules ('degraded', 'hard_down'); older rule files have just one."""
+    return cfg.get("definitions") or {"degraded": {"label": "Degraded", "window_minutes": cfg.get("window_minutes", 1),
+                                                   "window_fail_share": cfg.get("window_fail_share", 1.0)}}
+
+
+def default_definition(cfg: dict) -> str:
+    return cfg.get("default_definition") or next(iter(definitions(cfg)))
+
+
+def definition_cfg(cfg: dict, name: Optional[str]) -> dict:
+    """The rules with one definition's window and fail share applied (unknown names fall back to the default)."""
+    defs = definitions(cfg)
+    d = defs.get(name or "") or defs[default_definition(cfg)]
+    return dict(cfg, window_minutes=d["window_minutes"], window_fail_share=d["window_fail_share"])
+
+
+def pick_definition(cfg: dict, name: Optional[str]) -> str:
+    return name if name in definitions(cfg) else default_definition(cfg)
+
+
 def parse_days(frm: Optional[str], to: Optional[str], default_days: int = 7, max_days: int = MAX_REPORT_DAYS):
     """Inclusive UTC date range from YYYY-MM-DD strings (to defaults to today, from to `default_days` back)."""
     try:
@@ -49,7 +70,9 @@ def official_states(rows, cfg, keep_from: str) -> Dict[str, Dict[str, str]]:
 
 
 def report(db, cfg: dict, d_from: date, d_to: date, services: Optional[List[str]] = None,
-           networks: Optional[List[str]] = None) -> dict:
+           networks: Optional[List[str]] = None, definition: Optional[str] = None) -> dict:
+    definition = pick_definition(cfg, definition)
+    cfg = definition_cfg(cfg, definition)
     services = [s for s in (services or cfg["services"]) if s in cfg["services"]] or list(cfg["services"])
     start = d_from.strftime("%Y-%m-%dT00:00Z")
     end = (d_to + timedelta(days=1)).strftime("%Y-%m-%dT00:00Z")
@@ -122,12 +145,13 @@ def report(db, cfg: dict, d_from: date, d_to: date, services: Optional[List[str]
         "networks": {n: {"counted": n not in reference, "operator": cfg["operators"].get(n, n),
                          "coverage_pct": pct(len(covered[n]), minutes_in_range, 1)} for n in nets},
         "summary": summary, "outages": outages, "daily": days,
-        "minutes_in_range": minutes_in_range, "minutes_judged": len(states),
+        "minutes_in_range": minutes_in_range, "minutes_judged": len(states), "definition": definition,
     }
 
 
-def minutes(db, cfg: dict, start: datetime, end: datetime) -> List[dict]:
+def minutes(db, cfg: dict, start: datetime, end: datetime, definition: Optional[str] = None) -> List[dict]:
     """Official state of every service, minute by minute, for start <= minute < end (at most 24 hours)."""
+    cfg = definition_cfg(cfg, definition)
     s, e = start.strftime(FMT), end.strftime(FMT)
     warm = (start - timedelta(minutes=2 * int(cfg.get("window_minutes", 1)))).strftime(FMT)
     st = official_states(_rows(db, warm, e), cfg, s)

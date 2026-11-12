@@ -69,6 +69,7 @@ def build(store, keys_dir: str, cfg: dict, hours: int = 24, now: Optional[dateti
             "chain_valid": not problems,
             "problems": problems[:5],
             "host": rs[-1].get("host") if rs else None,
+            "account": rs[-1].get("account") if rs else None,
         }
 
     counted = [r for r in recs if r["network"] not in reference]
@@ -124,6 +125,8 @@ def build(store, keys_dir: str, cfg: dict, hours: int = 24, now: Optional[dateti
                   "window_minutes": cfg.get("window_minutes", 1), "window_fail_share": cfg.get("window_fail_share", 1.0),
                   "waiting_periods_min": cfg["waiting_periods_min"]},
         "independent_operators": operators,
+        "shared_target_accounts": sorted({a for a in [networks[n].get("account") for n in nets if n not in reference]
+                                          if a and [networks[m].get("account") for m in nets if m not in reference].count(a) > 1}),
         "can_decide": len(operators) >= cfg["operators_required"],
         "overall": ("down" if last_min and any(states[last_min][s] == "down" for s in services)
                     else ("up" if last_min and all(states[last_min][s] == "up" for s in services) else "unknown")),

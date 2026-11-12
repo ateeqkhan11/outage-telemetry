@@ -12,6 +12,7 @@
 <form class="panel filterbar" method="get" action="{{ url_for('web.reports_page') }}">
   <label>From<input type="date" id="from" name="from" value="{{ rep.from if rep else args.get('from', '') }}"></label>
   <label>To<input type="date" id="to" name="to" value="{{ rep.to if rep else args.get('to', '') }}"></label>
+  <label>Definition<select id="def" name="def">{% for k, d in defs.items() %}<option value="{{ k }}" {% if (rep and rep.definition == k) or (not rep and args.get('def') == k) %}selected{% endif %}>{{ d.label }}</option>{% endfor %}</select></label>
   <fieldset><legend>Services</legend><div class="checks">
     {% for s in cfg.services %}<label><input type="checkbox" name="service" value="{{ s }}" {% if not args.getlist('service') or s in args.getlist('service') %}checked{% endif %}>{{ s | svcname }}</label>{% endfor %}
   </div></fieldset>
@@ -34,7 +35,7 @@
   </table></div>
 </section>
 <section class="panel" aria-labelledby="ladder-h">
-  <div class="panel-head"><div><h2 id="ladder-h">Trigger ladder</h2><p>Outages called in this period against the 1-hour and 2-hour waiting periods (amber lines).</p></div></div>
+  <div class="panel-head"><div><h2 id="ladder-h">Trigger ladder</h2><p>Outages called under the <b>{{ defs[rep.definition].label | lower }}</b> definition, against the 1-hour and 2-hour waiting periods (amber lines).</p></div></div>
   {{ ladder(rep.outages, cfg.waiting_periods_min, "None in this period. No service failed for " ~ cfg.operators_required ~ " independent companies at once.", link=False) }}
 </section>
 <section class="panel" aria-labelledby="saw-h">

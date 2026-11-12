@@ -37,7 +37,7 @@ STATIC_CSS = """
 """
 
 
-def build(out: Path) -> list:
+def build(out: Path, artifact: bool = False) -> list:
     os.environ.update(NIMBUS_SECURE_COOKIES="0", NIMBUS_DEMO="1", NIMBUS_DB=str(DEMO / "nimbus.db"),
                       NIMBUS_DATA=str(DEMO / "data"), NIMBUS_KEYS=str(DEMO / "keys"))
     from nimbus_app import create_app
@@ -117,6 +117,14 @@ def build(out: Path) -> list:
     (out / "static.js").write_text(STATIC_JS)
     (out / "static.css").write_text(STATIC_CSS)
 
+    if not artifact:
+        # local copy: browsers block fetch() from file://, so the dashboard reads its data from a data: URL
+        import base64
+        uri = "data:application/json;base64," + base64.b64encode((out / "status.json").read_bytes()).decode()
+        p = out / "dashboard.html"
+        p.write_text(p.read_text().replace('data-src="status.json"', f'data-src="{uri}"'))
+        (out / "index.html").write_text((out / "index.html").read_text().replace("<title>History · Nimbus Index</title>", "<title>Nimbus Index Preview</title>"))
+        return written
     # index.html becomes the published page: drop the document wrapper the Artifact host adds itself
     idx = (out / "index.html").read_text()
     head = re.search(r"<head>(.*?)</head>", idx, re.S).group(1)
@@ -130,4 +138,6 @@ def build(out: Path) -> list:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
-    print(build(Path(ap.parse_args().out)))
+    ap.add_argument("--artifact", action="store_true", help="strip index.html's document wrapper for publishing")
+    a = ap.parse_args()
+    print(build(Path(a.out), a.artifact))

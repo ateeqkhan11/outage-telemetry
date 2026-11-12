@@ -17,7 +17,7 @@ from typing import Dict, Iterable, List, Optional
 
 from probe.detect import FMT
 
-from .reports import BadRange, _rows, official_states
+from .reports import BadRange, _rows, definition_cfg, definitions, official_states, pick_definition
 
 REGION = "*"
 MAX_HISTORY_DAYS = 400
@@ -27,17 +27,8 @@ def _now_minute() -> datetime:
     return datetime.utcnow().replace(second=0, microsecond=0)
 
 
-def rollup_day(con, cfg: dict, day: str, now: Optional[datetime] = None) -> None:
-    services = cfg["services"]
-    start = datetime.strptime(day, "%Y-%m-%d")
-    end = min(start + timedelta(days=1), now or _now_minute())        # only finished minutes
-    if end <= start:
-        return
-    s, e = start.strftime(FMT), (start + timedelta(days=1)).strftime(FMT)
-    warm = (start - timedelta(minutes=2 * int(cfg.get("window_minutes", 1)))).strftime(FMT)
-    rows = _rows(con, warm, e)
-    states = official_states(rows, cfg, s)
-
+def _judge_day(states: dict, services: List[str], day: str, start: datetime, end: datetime, definition: str):
+    """Minute states for one definition -> (stretches that were not up, counts per service and region)."""
     counts = {k: {"up": 0, "down": 0, "unknown": 0} for k in services + [REGION]}
     runs: List[tuple] = []
     open_: Dict[str, list] = {}
@@ -55,12 +46,32 @@ def rollup_day(con, cfg: dict, day: str, now: Optional[datetime] = None) -> None
                 run[2] = m
             else:
                 if run and run[0] != "up":
-                    runs.append((day, k, run[0], run[1], run[2]))
+                    runs.append((day, definition, k, run[0], run[1], run[2]))
                 open_[k] = [st, m, m]
         t += timedelta(minutes=1)
     for k, run in open_.items():
         if run[0] != "up":
-            runs.append((day, k, run[0], run[1], run[2]))
+            runs.append((day, definition, k, run[0], run[1], run[2]))
+    return runs, counts
+
+
+def rollup_day(con, cfg: dict, day: str, now: Optional[datetime] = None) -> None:
+    """Judge every minute of one day under each outage definition and store the roll-ups (replacing that day's)."""
+    services = cfg["services"]
+    start = datetime.strptime(day, "%Y-%m-%d")
+    end = min(start + timedelta(days=1), now or _now_minute())        # only finished minutes
+    if end <= start:
+        return
+    s, e = start.strftime(FMT), (start + timedelta(days=1)).strftime(FMT)
+    longest = max(int(d["window_minutes"]) for d in definitions(cfg).values())
+    rows = _rows(con, (start - timedelta(minutes=2 * longest)).strftime(FMT), e)
+
+    all_runs, all_counts = [], []
+    for name in definitions(cfg):
+        states = official_states(rows, definition_cfg(cfg, name), s)
+        runs, counts = _judge_day(states, services, day, start, end, name)
+        all_runs += runs
+        all_counts += [(day, name, k, c["up"], c["down"], c["unknown"]) for k, c in counts.items()]
 
     nets = defaultdict(lambda: [set(), 0, 0, 0, 0])
     for r in rows:
@@ -74,9 +85,8 @@ def rollup_day(con, cfg: dict, day: str, now: Optional[datetime] = None) -> None
     con.execute("BEGIN")
     for table in ("state_runs", "daily_states", "daily_networks"):
         con.execute(f"DELETE FROM {table} WHERE day = ?", (day,))
-    con.executemany("INSERT INTO state_runs (day, service, state, start, end) VALUES (?, ?, ?, ?, ?)", runs)
-    con.executemany("INSERT INTO daily_states (day, service, up, down, unknown) VALUES (?, ?, ?, ?, ?)",
-                    [(day, k, c["up"], c["down"], c["unknown"]) for k, c in counts.items()])
+    con.executemany("INSERT INTO state_runs (day, definition, service, state, start, end) VALUES (?, ?, ?, ?, ?, ?)", all_runs)
+    con.executemany("INSERT INTO daily_states (day, definition, service, up, down, unknown) VALUES (?, ?, ?, ?, ?, ?)", all_counts)
     con.executemany("INSERT INTO daily_networks (day, network, minutes, checks, ok, lat_sum, lat_n) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     [(day, net, len(v[0]), v[1], v[2], v[3], v[4]) for net, v in nets.items()])
     con.execute("COMMIT")
@@ -145,6 +155,111 @@ def events_from_runs(region_runs: List[tuple], service_down: List[tuple], cfg: d
     return out
 
 
+def _to_min(m: str) -> int:
+    return int(datetime.strptime(m, FMT).timestamp() // 60)
+
+
+def _from_min(n: int) -> str:
+    return datetime.utcfromtimestamp(n * 60).strftime(FMT)
+
+
+def _union(intervals: List[tuple]) -> List[list]:
+    out: List[list] = []
+    for a, b in sorted(intervals):
+        if out and a <= out[-1][1] + 1:
+            out[-1][1] = max(out[-1][1], b)
+        else:
+            out.append([a, b])
+    return out
+
+
+def _subtract(base: List[list], cut: List[list]) -> List[tuple]:
+    out = []
+    for a, b in base:
+        pieces = [(a, b)]
+        for c, d in cut:
+            nxt = []
+            for x, y in pieces:
+                if d < x or c > y:
+                    nxt.append((x, y)); continue
+                if x < c: nxt.append((x, c - 1))
+                if d < y: nxt.append((d + 1, y))
+            pieces = nxt
+        out += pieces
+    return out
+
+
+def _runs(con, definition: str, services: Optional[List[str]], start: str, last: str):
+    """(region-style runs [(state, start, end)], service down runs [(service, start, end)]) for a set of services.
+
+    services=None means all of them (the stored region row). For a subset, a minute is down when any of those services
+    is down, otherwise undecided when any is undecided, which is how the region row is built for all services."""
+    q = ("SELECT service, state, start, end FROM state_runs WHERE definition = ? AND end >= ? AND start <= ?"
+         " ORDER BY start")
+    rows = [tuple(r) for r in con.execute(q, (definition, start, last))]
+    service_down = [(sv, a, b) for sv, st, a, b in rows if sv != REGION and st == "down"]
+    if services is None:
+        return [(st, a, b) for sv, st, a, b in rows if sv == REGION], service_down
+    picked = [r for r in rows if r[0] in services]
+    down = _union([(_to_min(a), _to_min(b)) for sv, st, a, b in picked if st == "down"])
+    unk = _union([(_to_min(a), _to_min(b)) for sv, st, a, b in picked if st == "unknown"])
+    runs = [("down", a, b) for a, b in down] + [("unknown", a, b) for a, b in _subtract(unk, down)]
+    runs.sort(key=lambda r: r[1])
+    return ([(st, _from_min(a), _from_min(b)) for st, a, b in runs],
+            [r for r in service_down if r[0] in services])
+
+
+# ---- policy replay: what a parametric policy written on these terms would have paid -------------------------------
+
+TERM_DEFAULTS = {"waiting_min": 120, "hourly": 25000, "merge_gap_min": 30, "rounding_min": 5,
+                 "event_limit": 1000000, "aggregate_limit": 3000000}
+
+
+def replay(con, cfg: dict, d_from: date, d_to: date, terms: dict) -> dict:
+    """Apply policy terms to the outages a definition called in a period.
+
+    terms: definition, services (list), waiting_min, hourly (dollars per hour), merge_gap_min (outages starting within
+    this many minutes of the last one's end are one event, gap not counted, one waiting period), rounding_min (each
+    outage's length rounded up to this step), event_limit and aggregate_limit (dollars).
+    Payout per event = hourly x (length - waiting period), capped by the event limit, then by what is left of the
+    aggregate. Money is whole dollars; time is whole minutes.
+    """
+    definition = pick_definition(cfg, terms.get("definition"))
+    services = [x for x in (terms.get("services") or cfg["services"]) if x in cfg["services"]] or list(cfg["services"])
+    t = dict(TERM_DEFAULTS, **{k: int(v) for k, v in terms.items() if k in TERM_DEFAULTS and v is not None})
+    start = f"{d_from.isoformat()}T00:00Z"
+    until = min(datetime.combine(d_to + timedelta(days=1), datetime.min.time()), _now_minute())
+    last = (until - timedelta(minutes=1)).strftime(FMT)
+    region_runs, service_down = _runs(con, definition, None if len(services) == len(cfg["services"]) else services, start, last)
+    outages = events_from_runs(region_runs, service_down, cfg, start, last) if region_runs else []
+
+    step = max(1, t["rounding_min"])
+    rounded = lambda m: -(-m // step) * step
+    events: List[dict] = []
+    for o in outages:
+        prev = events[-1] if events else None
+        if prev and _minutes_between(prev["end"], o["start"]) - 1 <= t["merge_gap_min"] and not prev.get("ongoing"):
+            prev["parts"].append(o)
+            prev["end"] = o["end"]
+            prev["minutes"] += rounded(o["duration_min"])
+            prev["services"] = sorted(set(prev["services"]) | set(o["services"]))
+            prev["ongoing"] = bool(o.get("ongoing"))
+        else:
+            events.append({"start": o["start"], "end": o["end"], "parts": [o], "minutes": rounded(o["duration_min"]),
+                           "services": list(o["services"]), "ongoing": bool(o.get("ongoing"))})
+    left = t["aggregate_limit"]
+    for e in events:
+        e["indemnity_min"] = max(0, e["minutes"] - t["waiting_min"])
+        raw = t["hourly"] * e["indemnity_min"] // 60
+        e["payout"] = min(raw, t["event_limit"], left)
+        e["capped"] = e["payout"] < raw
+        left -= e["payout"]
+        e["id"] = f"{definition}-{e['start']}"
+    return {"from": d_from.isoformat(), "to": d_to.isoformat(), "definition": definition, "services": services,
+            "terms": t, "events": events, "total": sum(e["payout"] for e in events),
+            "paying_events": sum(1 for e in events if e["payout"] > 0), "rules": cfg["version"]}
+
+
 def parse_period(frm: Optional[str], to: Optional[str], days: int = 180):
     try:
         d_to = date.fromisoformat(to) if to else datetime.utcnow().date()
@@ -162,7 +277,8 @@ def _pct(a, b, nd=3):
     return round(100 * a / b, nd) if b else None
 
 
-def overview(con, cfg: dict, d_from: date, d_to: date) -> dict:
+def overview(con, cfg: dict, d_from: date, d_to: date, definition: Optional[str] = None) -> dict:
+    definition = pick_definition(cfg, definition)
     services = cfg["services"]
     reference = set(cfg.get("reference_networks", []))
     f, t = d_from.isoformat(), d_to.isoformat()
@@ -172,7 +288,7 @@ def overview(con, cfg: dict, d_from: date, d_to: date) -> dict:
     minutes_in_range = max(0, int((until - datetime.strptime(start, FMT)).total_seconds() // 60))
 
     daily = defaultdict(dict)                                   # day -> service -> {up, down, unknown}
-    for r in con.execute("SELECT * FROM daily_states WHERE day BETWEEN ? AND ?", (f, t)):
+    for r in con.execute("SELECT * FROM daily_states WHERE definition = ? AND day BETWEEN ? AND ?", (definition, f, t)):
         daily[r["day"]][r["service"]] = {"up": r["up"], "down": r["down"], "unknown": r["unknown"]}
 
     days, d = [], d_from
@@ -196,11 +312,7 @@ def overview(con, cfg: dict, d_from: date, d_to: date) -> dict:
                 tot[x] += daily.get(day, {}).get(k, {}).get(x, 0)
         return tot
 
-    q = "SELECT state, start, end FROM state_runs WHERE service = ? AND end >= ? AND start <= ? ORDER BY start"
-    region_runs = [tuple(r) for r in con.execute(q, (REGION, start, last))]
-    service_down = [tuple(r) for r in con.execute(
-        "SELECT service, start, end FROM state_runs WHERE service != ? AND state = 'down' AND end >= ? AND start <= ?",
-        (REGION, start, last))]
+    region_runs, service_down = _runs(con, definition, None, start, last)
     outages = events_from_runs(region_runs, service_down, cfg, start, last) if region_runs else []
 
     summary = {}
@@ -231,7 +343,7 @@ def overview(con, cfg: dict, d_from: date, d_to: date) -> dict:
                 for net, v in sorted(nets.items())}
 
     waits = {str(w): sum(1 for o in outages if o["meets_waiting_period"][str(w)]) for w in cfg["waiting_periods_min"]}
-    return {"from": f, "to": t, "rules": cfg["version"], "services": services, "days": days, "summary": summary,
+    return {"from": f, "to": t, "rules": cfg["version"], "definition": definition, "services": services, "days": days, "summary": summary,
             "months": months, "outages": outages, "networks": networks, "minutes_in_range": minutes_in_range,
             "waiting_periods_met": waits,
             "longest_outage_min": max((o["duration_min"] for o in outages), default=0),

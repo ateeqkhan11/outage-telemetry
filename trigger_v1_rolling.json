@@ -35,9 +35,25 @@
   ],
   "notes": [
     "An operator fails a service when at least 10% of its usable checks in the last 10 minutes failed. At 6 checks a minute that is 6 of 60 calls; normal AWS error rates are far below that, so two operators crossing it together by chance is very unlikely.",
-    "Reference networks (the AWS Lambda probe in Oregon) are shown on the dashboard but never counted: a probe inside AWS can't independently judge AWS."
+    "Reference networks (the AWS Lambda probe in Oregon) are shown on the dashboard but never counted: a probe inside AWS can't independently judge AWS.",
+    "Two definitions are reported side by side. 'degraded' (the rolling 10% rule above) catches partial outages; 'hard_down' matches the 'no service' style of trigger used in current parametric cloud policies. The top-level window settings are the 'degraded' definition."
   ],
   "reference_networks": [
     "aws"
-  ]
+  ],
+  "definitions": {
+    "degraded": {
+      "label": "Degraded",
+      "window_minutes": 10,
+      "window_fail_share": 0.1,
+      "description": "At least 2 independent companies each see 10% or more of their calls to a service fail over the last 10 minutes."
+    },
+    "hard_down": {
+      "label": "Hard down",
+      "window_minutes": 3,
+      "window_fail_share": 0.9,
+      "description": "At least 2 independent companies each see 90% or more of their calls to a service fail over the last 3 minutes: no usable service."
+    }
+  },
+  "default_definition": "degraded"
 }

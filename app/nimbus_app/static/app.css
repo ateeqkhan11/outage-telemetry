@@ -107,7 +107,7 @@ input:hover, textarea:hover, select:hover { border-color: var(--slate); }
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 45%, transparent); }
 textarea { min-height: 100px; resize: vertical; }
 input[type=checkbox] { accent-color: var(--navy); width: 16px; height: 16px; }
-.filterbar { display: grid; grid-template-columns: 170px 170px minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 16px; align-items: end; padding: 18px 22px; }
+.filterbar { display: grid; grid-template-columns: 150px 150px 150px minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 16px; align-items: end; padding: 18px 22px; }
 .filter-note { grid-column: 1 / -1; margin: 0; color: var(--slate); font-size: 13px; }
 @media (max-width: 980px) { .filterbar { grid-template-columns: 1fr 1fr; } .filterbar fieldset { grid-column: 1 / -1; } }
 .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; align-items: end; }
@@ -145,3 +145,11 @@ pre code { background: none; padding: 0; border: 0; }
   .strip-scroll { overflow: visible; }
   .nav { mask-image: linear-gradient(90deg, #000 85%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }
 }
+
+/* policy check */
+.terms-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; align-items: end; }
+.terms-form .span-all { grid-column: 1 / -1; }
+input[type=number] { font: 15px var(--sans); color: var(--ink); background: var(--paper); border: 1px solid var(--rule-strong); border-radius: var(--r); padding: 10px 12px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+input[type=number]:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 45%, transparent); }
+.band-controls { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+@media (max-width: 900px) { .band-controls { align-items: flex-start; } }

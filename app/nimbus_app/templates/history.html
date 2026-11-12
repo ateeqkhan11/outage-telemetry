@@ -6,9 +6,14 @@
     <h1>History</h1>
     <p class="lede">Every minute of AWS us-east-1, judged by trigger rules <span class="code-on-navy">{{ cfg.version }}</span>. Read each outage against the waiting periods a policy would set.</p>
   </div>
-  <nav class="seg" aria-label="Period">
-    {% for n, label in periods %}<a href="{{ url_for('web.history_page', days=n) }}" {% if n == days %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
-  </nav>
+  <div class="band-controls">
+    <nav class="seg" aria-label="Outage definition">
+      {% for k, d in defs.items() %}<a href="{{ url_for('web.history_page', days=days, def=k) }}" {% if k == definition %}aria-current="page"{% endif %}>{{ d.label }}</a>{% endfor %}
+    </nav>
+    <nav class="seg" aria-label="Period">
+      {% for n, label in periods %}<a href="{{ url_for('web.history_page', days=n, def=definition) }}" {% if n == days %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+    </nav>
+  </div>
 </div></section>
 {% endblock %}
 {% block body %}
@@ -20,13 +25,15 @@
   <div class="panel-head"><h2 id="terms-h">Summary of terms</h2><span class="muted tnum">{{ ov.from | longdate }} to {{ ov.to | longdate }}</span></div>
   <table class="deftable">
     <tr><th scope="row"><dfn>Official uptime</dfn></th><td><b class="figure-sm">{{ region.official_uptime_pct | pct }}</b> all five services, over {{ "{:,}".format(region.judged_minutes) }} judged minutes</td></tr>
-    <tr><th scope="row"><dfn>Outages called</dfn></th><td><b class="figure-sm">{{ ov.outages | length }}</b> {% if ov.outages %}longest {{ ov.longest_outage_min | dur }}; {{ region.down_minutes | dur }} down in all{% else %}none in this period{% endif %}</td></tr>
+    <tr><th scope="row"><dfn>Definition</dfn></th><td><b>{{ defs[definition].label }}</b>: {{ defs[definition].description }}</td></tr>
+    <tr><th scope="row"><dfn>Outages called</dfn></th><td><b class="figure-sm">{{ ov.outages | length }}</b> {% if ov.outages %}longest {{ ov.longest_outage_min | dur }}; {{ region.down_minutes | dur }} down in all{% else %}none in this period{% endif %}
+      {% if other %}<span class="cell-sub">{{ defs[other.definition].label }} definition: {{ other.outages | length }} outages, {{ other.summary['*'].down_minutes | dur }} down. <a href="{{ url_for('web.history_page', days=days, def=other.definition) }}">Switch</a></span>{% endif %}</td></tr>
     {% for w in cfg.waiting_periods_min %}<tr class="attach"><th scope="row"><dfn>Met a {{ w // 60 }}-hour waiting period</dfn></th><td><b class="figure-sm">{{ ov.waiting_periods_met[w|string] }}</b> of {{ ov.outages | length }} outages ran {{ w // 60 }} h or longer</td></tr>{% endfor %}
     <tr><th scope="row"><dfn>Judged by</dfn></th><td>{{ counted | join(', ') }}; any {{ cfg.operators_required }} must agree</td></tr>
     <tr><th scope="row"><dfn>Undecided minutes</dfn></th><td class="tnum">{{ "{:,}".format(region.undecided_minutes) }}</td></tr>
     <tr class="def-head"><th colspan="2">Definitions</th></tr>
     <tr><th scope="row"><dfn>Judged minute</dfn></th><td>A minute in which probes run by at least {{ cfg.operators_required }} different companies have results.</td></tr>
-    <tr><th scope="row"><dfn>Down</dfn></th><td>At least {{ cfg.operators_required }} companies each see {{ (cfg.window_fail_share * 100) | round | int }}% or more of their calls to a service fail over the last {{ cfg.window_minutes }} minutes, while their own connection works.</td></tr>
+    {% for k, d in defs.items() %}<tr><th scope="row"><dfn>{{ d.label }}</dfn></th><td>At least {{ cfg.operators_required }} companies each see {{ (d.window_fail_share * 100) | round | int }}% or more of their calls to a service fail over the last {{ d.window_minutes }} minutes, while their own connection works.</td></tr>{% endfor %}
     <tr><th scope="row"><dfn>Undecided</dfn></th><td>Fewer than {{ cfg.operators_required }} companies had results, so no call is made either way. Never counted as up.</td></tr>
     <tr><th scope="row"><dfn>Waiting period</dfn></th><td>How long an outage must last before a policy pays: {% for w in cfg.waiting_periods_min %}{{ w // 60 }} hour{{ 's' if w > 60 }}{{ ' or ' if not loop.last }}{% endfor %} here. An outage ends after {{ cfg.recovery_minutes }} clear minutes.</td></tr>
     <tr><th scope="row"><dfn>Reference network</dfn></th><td>A probe inside AWS. Shown for comparison, never counted: AWS can't independently judge AWS.</td></tr>
@@ -61,7 +68,7 @@
 
 <section class="panel" aria-labelledby="ladder-h">
   <div class="panel-head"><div><h2 id="ladder-h">Trigger ladder</h2>
-    <p>Every outage called in this period, newest first, against the 1-hour and 2-hour waiting periods (amber lines).</p></div></div>
+    <p>Every outage called under the <b>{{ defs[definition].label | lower }}</b> definition, newest first, against the 1-hour and 2-hour waiting periods (amber lines). <a href="{{ url_for('web.policy_page', def=definition) }}">Check what a policy would pay</a>.</p></div></div>
   {{ ladder(ov.outages, cfg.waiting_periods_min, "No outage called in this period. No service failed for " ~ cfg.operators_required ~ " independent companies at once.") }}
 </section>
 

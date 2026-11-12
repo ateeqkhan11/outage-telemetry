@@ -82,14 +82,15 @@ CREATE INDEX IF NOT EXISTS minute_counts_minute ON minute_counts (minute);
 
 -- daily roll-ups for long periods (history.py). service '*' = the region: down if any service is down.
 --   state_runs: every stretch of minutes that was not 'up' (minutes with no data count as 'unknown'), split at midnight
+--   definition: which outage definition judged it ('degraded', 'hard_down'; see the trigger rules)
 CREATE TABLE IF NOT EXISTS state_runs (
-  day TEXT NOT NULL, service TEXT NOT NULL, state TEXT NOT NULL, start TEXT NOT NULL, end TEXT NOT NULL
+  day TEXT NOT NULL, definition TEXT NOT NULL, service TEXT NOT NULL, state TEXT NOT NULL, start TEXT NOT NULL, end TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS state_runs_start ON state_runs (service, start);
+CREATE INDEX IF NOT EXISTS state_runs_start ON state_runs (definition, service, start);
 CREATE INDEX IF NOT EXISTS state_runs_day ON state_runs (day);
 CREATE TABLE IF NOT EXISTS daily_states (
-  day TEXT NOT NULL, service TEXT NOT NULL, up INTEGER NOT NULL, down INTEGER NOT NULL, unknown INTEGER NOT NULL,
-  PRIMARY KEY (day, service)
+  day TEXT NOT NULL, definition TEXT NOT NULL, service TEXT NOT NULL, up INTEGER NOT NULL, down INTEGER NOT NULL, unknown INTEGER NOT NULL,
+  PRIMARY KEY (day, definition, service)
 );
 CREATE TABLE IF NOT EXISTS daily_networks (
   day TEXT NOT NULL, network TEXT NOT NULL, minutes INTEGER NOT NULL, checks INTEGER NOT NULL, ok INTEGER NOT NULL,
@@ -115,6 +116,9 @@ def connect(path: str) -> sqlite3.Connection:
 
 def init(path: str) -> None:
     con = connect(path)
+    cols = [r[1] for r in con.execute("PRAGMA table_info(daily_states)")]
+    if cols and "definition" not in cols:            # roll-ups from before outage definitions: derived data, rebuild
+        con.executescript("DROP TABLE IF EXISTS daily_states; DROP TABLE IF EXISTS state_runs;")
     con.executescript(SCHEMA)
     con.close()
 

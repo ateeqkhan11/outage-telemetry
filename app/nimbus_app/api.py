@@ -15,7 +15,7 @@ from flask import Blueprint, Response, current_app, jsonify, request
 
 from probe.detect import FMT
 
-from . import data, history, reports
+from . import certificates, data, history, reports
 from .auth import api_key_required
 from .db import get_db
 
@@ -26,7 +26,9 @@ def _rules():
     cfg = current_app.config["RULES"]
     return {"version": cfg["version"], "operators_required": cfg["operators_required"],
             "window_minutes": cfg.get("window_minutes", 1), "window_fail_share": cfg.get("window_fail_share", 1.0),
-            "fail_kinds": cfg["fail_kinds"], "reference_networks": cfg.get("reference_networks", [])}
+            "fail_kinds": cfg["fail_kinds"], "reference_networks": cfg.get("reference_networks", []),
+            "definitions": {k: {x: v[x] for x in ("label", "window_minutes", "window_fail_share") if x in v}
+                            for k, v in reports.definitions(cfg).items()}}
 
 
 @bp.get("/status")
@@ -67,7 +69,7 @@ def minutes():
             raise reports.BadRange("Choose a range of up to 24 hours, with 'from' before 'to'.")
     except reports.BadRange as e:
         return jsonify(error=str(e)), 400
-    rows = reports.minutes(get_db(), current_app.config["RULES"], start, end)
+    rows = reports.minutes(get_db(), current_app.config["RULES"], start, end, request.args.get("def"))
     return jsonify({"from": start.strftime(FMT), "to": end.strftime(FMT), "rules": _rules(), "minutes": rows})
 
 
@@ -79,7 +81,8 @@ def uptime():
     except reports.BadRange as e:
         return jsonify(error=str(e)), 400
     rep = reports.report(get_db(), current_app.config["RULES"], d_from, d_to,
-                         request.args.getlist("service") or None, request.args.getlist("network") or None)
+                         request.args.getlist("service") or None, request.args.getlist("network") or None,
+                         request.args.get("def"))
     rep["rules"] = _rules()
     if request.args.get("daily") != "1":
         rep.pop("daily")
@@ -93,8 +96,9 @@ def outages():
         d_from, d_to = reports.parse_days(request.args.get("from"), request.args.get("to"))
     except reports.BadRange as e:
         return jsonify(error=str(e)), 400
-    rep = reports.report(get_db(), current_app.config["RULES"], d_from, d_to)
-    return jsonify({"from": rep["from"], "to": rep["to"], "rules": _rules(), "outages": rep["outages"]})
+    rep = reports.report(get_db(), current_app.config["RULES"], d_from, d_to, definition=request.args.get("def"))
+    return jsonify({"from": rep["from"], "to": rep["to"], "rules": _rules(), "definition": rep["definition"],
+                    "outages": rep["outages"]})
 
 
 @bp.get("/history")
@@ -105,14 +109,48 @@ def history_():
         d_from, d_to = history.parse_period(request.args.get("from"), request.args.get("to"))
     except reports.BadRange as e:
         return jsonify(error=str(e)), 400
-    ov = history.overview(get_db(), current_app.config["RULES"], d_from, d_to)
+    ov = history.overview(get_db(), current_app.config["RULES"], d_from, d_to, request.args.get("def"))
     daily = [{"date": c["day"], "service": k, "down_minutes": c["down"], "judged_minutes": c["judged"],
               "undecided_minutes": c["unknown"], "official_uptime_pct": c.get("uptime")}
              for k in ov["services"] for c in ov["summary"][k]["days"]]
-    return jsonify({"from": ov["from"], "to": ov["to"], "rules": _rules(), "outages": ov["outages"],
+    return jsonify({"from": ov["from"], "to": ov["to"], "rules": _rules(), "definition": ov["definition"], "outages": ov["outages"],
                     "uptime": {k: {x: v[x] for x in ("official_uptime_pct", "down_minutes", "judged_minutes", "undecided_minutes")}
                                for k, v in ov["summary"].items() if k != history.REGION},
                     "networks": ov["networks"], "daily": daily})
+
+
+@bp.get("/replay")
+@api_key_required
+def replay():
+    """What a policy on the given terms would have paid: same parameters as the app's Policy check page."""
+    from .views import _terms_from
+    cfg = current_app.config["RULES"]
+    try:
+        d_from, d_to = history.parse_period(request.args.get("from"), request.args.get("to"))
+    except reports.BadRange as e:
+        return jsonify(error=str(e)), 400
+    res = history.replay(get_db(), cfg, d_from, d_to, _terms_from(request.args, cfg))
+    res["rules"] = _rules()
+    return jsonify(res)
+
+
+@bp.get("/certificate")
+@api_key_required
+def certificate():
+    """Signed certificate for one replayed event (?event=<start minute> plus the replay parameters)."""
+    from .views import _terms_from
+    cfg = current_app.config["RULES"]
+    try:
+        d_from, d_to = history.parse_period(request.args.get("from"), request.args.get("to"))
+    except reports.BadRange as e:
+        return jsonify(error=str(e)), 400
+    terms = _terms_from(request.args, cfg)
+    res = history.replay(get_db(), cfg, d_from, d_to, terms)
+    ev = next((e for e in res["events"] if e["start"] == request.args.get("event")), None)
+    if ev is None:
+        return jsonify(error="No outage starts at that minute under these terms."), 404
+    return jsonify(certificates.build(cfg, current_app.config["DATA_DIR"], current_app.instance_path, ev, res["definition"],
+                                      res["services"], terms=res["terms"], payout=ev, demo=current_app.config["DEMO"]))
 
 
 @bp.get("/records/<network>/<day>")
@@ -129,4 +167,5 @@ def records(network, day):
 def keys():
     return jsonify({"algorithm": "Ed25519", "encoding": "base64, raw 32-byte public key",
                     "signed_message": "the record's hash field, as bytes (SHA-256 of its canonical JSON)",
-                    "keys": data.public_keys()})
+                    "keys": data.public_keys(),
+                    "certificates": certificates.public_b64(certificates.signing_key(current_app.instance_path))})

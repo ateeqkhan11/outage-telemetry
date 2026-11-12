@@ -18,6 +18,7 @@
     <a href="{{ url_for('web.dashboard') }}" {% if here == 'web.dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
     <a href="{{ url_for('web.history_page') }}" {% if here == 'web.history_page' %}aria-current="page"{% endif %}>History</a>
     <a href="{{ url_for('web.reports_page') }}" {% if here == 'web.reports_page' %}aria-current="page"{% endif %}>Reports</a>
+    <a href="{{ url_for('web.policy_page') }}" {% if here in ('web.policy_page', 'web.certificate') %}aria-current="page"{% endif %}>Policy check</a>
     <a href="{{ url_for('web.api_access') }}" {% if here == 'web.api_access' %}aria-current="page"{% endif %}>API access</a>
     {% if me.role == 'admin' %}<a href="{{ url_for('admin.index') }}" {% if here and here.startswith('admin.') %}aria-current="page"{% endif %}>Admin</a>{% endif %}
   </nav>

@@ -21,13 +21,16 @@ env:
   PROBE_BUCKET: ${{ vars.PROBE_BUCKET }}
   PROBE_TABLE: ${{ vars.PROBE_TABLE }}
   PROBE_FUNCTION: ${{ vars.PROBE_FUNCTION }}
+  PROBE_TARGET_ACCOUNT: ${{ vars.PROBE_TARGET_ACCOUNT }}   # which test account this network calls (shown in every record)
 jobs:
   probe:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # GitHub's git service sometimes drops HTTP/2 connections ("Error in the HTTP2 framing layer"); HTTP/1.1 avoids it
+      - run: git config --global http.version HTTP/1.1
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip

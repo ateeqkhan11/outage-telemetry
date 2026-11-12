@@ -48,8 +48,9 @@ def probe_minute(network: str, checks: List[chk.Check], control: chk.Check, now:
     with ThreadPoolExecutor(len(everything)) as ex:
         outcomes = list(ex.map(lambda c: chk.run_check(c[2]), everything))
     host = where_am_i(network)
+    extra = {"account": os.environ["PROBE_TARGET_ACCOUNT"]} if os.environ.get("PROBE_TARGET_ACCOUNT") else {}
     return [dict(v=RECORD_VERSION, network=network, host=host, target=chk.TARGET_REGION, service=svc, op=op,
-                 minute=_iso(now, minute=True), at=_iso(now), **out)
+                 minute=_iso(now, minute=True), at=_iso(now), **extra, **out)
             for (svc, op, _), out in zip(everything, outcomes)]
 
 

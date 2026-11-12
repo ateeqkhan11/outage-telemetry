@@ -25,14 +25,14 @@ await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-sch
 await send("Network.setCookie", { name: "nimbus_session", value: sid, url: base, httpOnly: true });
 for (const s of shots) {
   const [path, name] = s.split(":");
-  await send("Emulation.setDeviceMetricsOverride", { width: +width, height: 900, deviceScaleFactor: 2, mobile: +width < 600 });
+  await send("Emulation.setDeviceMetricsOverride", { width: +width, height: +width < 600 ? 844 : 900, deviceScaleFactor: 2, mobile: +width < 600 });
   await send("Page.navigate", { url: base + path });
   await sleep(2500);
   const { result } = await send("Runtime.evaluate", { expression: "document.documentElement.scrollHeight", returnByValue: true });
-  const h = result.result.value;
+  const h = process.env.FIRST_SCREEN ? (+width < 600 ? 844 : 900) : result.result.value;
   await send("Emulation.setDeviceMetricsOverride", { width: +width, height: h, deviceScaleFactor: 2, mobile: +width < 600 });
   await sleep(600);
-  const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
+  const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: !process.env.FIRST_SCREEN });
   writeFileSync(join(outDir, `${name}.png`), Buffer.from(shot.result.data, "base64"));
   console.log(`${name}.png ${width}x${h}`);
 }

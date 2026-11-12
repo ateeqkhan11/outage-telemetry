@@ -195,3 +195,68 @@ def test_api_keys(env):
     kid = re.search(r'name="key_id" value="(\d+)"', page).group(1)
     c.post("/api-access", data={"csrf": csrf_of(page), "action": "revoke", "key_id": kid})
     assert api.get("/api/v1/status", headers=h).status_code == 401
+
+
+def test_history_matches_the_minute_rule(env):
+    app, recs, _ = env
+    from nimbus_app import history
+    from nimbus_app.db import connect
+    db = connect(app.config["DB_PATH"])
+    d = datetime(2026, 11, 10).date()
+    assert db.execute("SELECT COUNT(*) FROM daily_states WHERE day = ?", (DAY,)).fetchone()[0] == 6   # rolled up by ingest
+    ov = history.overview(db, CFG, d, d)
+    direct = detect(recs, CFG)["region"]
+    assert len(ov["outages"]) == 1
+    for k in ("start", "end", "duration_min", "services", "down_minutes", "meets_waiting_period"):
+        assert ov["outages"][0][k] == direct[0][k]
+    s3 = ov["summary"]["s3"]
+    assert s3["days"][0]["cls"] == "minor" and s3["down_minutes"] == direct[0]["down_minutes"]
+    assert ov["summary"]["dynamodb"]["down_minutes"] == 0
+    assert ov["summary"]["*"]["undecided_minutes"] == 1440 - ov["summary"]["*"]["judged_minutes"]   # no data = undecided
+    assert ov["networks"]["aws"]["counted"] is False
+
+
+def test_events_from_runs_edge_cases():
+    """Stretches split at midnight, undecided minutes inside an outage, and a short recovery that doesn't end it."""
+    from nimbus_app.history import events_from_runs
+    from probe.detect import events
+    cfg = dict(CFG, services=["s3"])
+    states = {}
+    t = datetime(2026, 7, 1, 23, 0)
+    pattern = ["up"] * 5 + ["down"] * 70 + ["up"] * 2 + ["unknown"] * 4 + ["down"] * 10 + ["up"] * 3 + ["down"] * 5 + ["up"] * 20
+    for st in pattern:
+        states[t.strftime("%Y-%m-%dT%H:%MZ")] = {"s3": st}
+        t += timedelta(minutes=1)
+    mins = sorted(states)
+    runs, cur = [], None
+    for m in mins:
+        st = states[m]["s3"]
+        if cur and cur[0] == st and m[:10] == cur[1][:10]:
+            cur[2] = m
+        else:
+            if cur and cur[0] != "up":
+                runs.append(tuple(cur))
+            cur = [st, m, m]
+    if cur[0] != "up":
+        runs.append(tuple(cur))
+    got = events_from_runs(runs, [("s3", a, b) for s, a, b in runs if s == "down"], cfg, mins[0], mins[-1])
+    want = events(states, cfg)
+    assert [(e["start"], e["end"], e["down_minutes"], e["unknown_minutes"], e["duration_min"]) for e in got] == \
+           [(e["start"], e["end"], e["down_minutes"], e["unknown_minutes"], e["duration_min"]) for e in want]
+    assert len(got) == 2
+
+
+def test_history_page(env):
+    app, _, _ = env
+    c = app.test_client()
+    assert c.get("/history").status_code == 302
+    invite_and_join(app, c)
+    r = c.get("/history?from=2026-11-01&to=2026-11-10")
+    html = r.get_data(as_text=True)
+    assert r.status_code == 200 and "Outages under the trigger rules" in html and "min</td>" in html
+    assert "Example data" not in html
+    page = c.get("/api-access").get_data(as_text=True)
+    page = c.post("/api-access", data={"csrf": csrf_of(page), "action": "create", "name": "h"}).get_data(as_text=True)
+    key = re.search(r"(nk_live_[\w-]+)", page).group(1)
+    h = app.test_client().get("/api/v1/history?from=2026-11-10&to=2026-11-10", headers={"Authorization": f"Bearer {key}"}).get_json()
+    assert len(h["outages"]) == 1 and h["uptime"]["s3"]["down_minutes"] > 0 and len(h["daily"]) == 5

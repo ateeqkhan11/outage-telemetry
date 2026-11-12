@@ -15,7 +15,7 @@ from flask import Blueprint, Response, current_app, jsonify, request
 
 from probe.detect import FMT
 
-from . import data, reports
+from . import data, history, reports
 from .auth import api_key_required
 from .db import get_db
 
@@ -95,6 +95,24 @@ def outages():
         return jsonify(error=str(e)), 400
     rep = reports.report(get_db(), current_app.config["RULES"], d_from, d_to)
     return jsonify({"from": rep["from"], "to": rep["to"], "rules": _rules(), "outages": rep["outages"]})
+
+
+@bp.get("/history")
+@api_key_required
+def history_():
+    """Daily official numbers and outages for up to 400 days (default: the last 180)."""
+    try:
+        d_from, d_to = history.parse_period(request.args.get("from"), request.args.get("to"))
+    except reports.BadRange as e:
+        return jsonify(error=str(e)), 400
+    ov = history.overview(get_db(), current_app.config["RULES"], d_from, d_to)
+    daily = [{"date": c["day"], "service": k, "down_minutes": c["down"], "judged_minutes": c["judged"],
+              "undecided_minutes": c["unknown"], "official_uptime_pct": c.get("uptime")}
+             for k in ov["services"] for c in ov["summary"][k]["days"]]
+    return jsonify({"from": ov["from"], "to": ov["to"], "rules": _rules(), "outages": ov["outages"],
+                    "uptime": {k: {x: v[x] for x in ("official_uptime_pct", "down_minutes", "judged_minutes", "undecided_minutes")}
+                               for k, v in ov["summary"].items() if k != history.REGION},
+                    "networks": ov["networks"], "daily": daily})
 
 
 @bp.get("/records/<network>/<day>")

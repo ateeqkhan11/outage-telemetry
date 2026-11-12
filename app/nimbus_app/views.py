@@ -9,7 +9,7 @@ from pathlib import Path
 from flask import (Blueprint, Response, abort, current_app, g, make_response, redirect, render_template, request,
                    send_from_directory, url_for)
 
-from . import auth, data, reports
+from . import auth, data, history, reports
 from .db import get_db, log, now
 
 bp = Blueprint("web", __name__)
@@ -128,6 +128,25 @@ def status_json():
     return s
 
 
+PERIODS = [(30, "30 days"), (90, "3 months"), (180, "6 months"), (365, "12 months")]
+
+
+@bp.get("/history")
+@auth.login_required
+def history_page():
+    cfg = current_app.config["RULES"]
+    days = request.args.get("days", 180, type=int)
+    days = days if days in dict(PERIODS) else 180
+    err = ov = None
+    try:
+        d_from, d_to = history.parse_period(request.args.get("from"), request.args.get("to"), days)
+        ov = history.overview(get_db(), cfg, d_from, d_to)
+        log("history", f"{d_from}..{d_to}", user_id=g.user["id"])
+    except reports.BadRange as e:
+        err = str(e)
+    return render_template("history.html", ov=ov, err=err, cfg=cfg, periods=PERIODS, days=days)
+
+
 def _report_args():
     cfg = current_app.config["RULES"]
     d_from, d_to = reports.parse_days(request.args.get("from"), request.args.get("to"))
@@ -231,3 +250,32 @@ def when(iso):
 @bp.app_template_filter("pct")
 def pct(v, nd=3):
     return "—" if v is None else f"{v:.{nd}f}%"
+
+
+SERVICE_NAMES = {"*": "Any service", "s3": "S3", "dynamodb": "DynamoDB", "lambda": "Lambda", "ec2": "EC2 API", "sts": "STS"}
+MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+
+@bp.app_template_filter("svcname")
+def svcname(k):
+    return SERVICE_NAMES.get(k, k)
+
+
+@bp.app_template_filter("dur")
+def dur(minutes):
+    """95 -> '1 h 35 min'."""
+    m = int(minutes or 0)
+    h, m = divmod(m, 60)
+    return f"{h} h {m} min" if h and m else (f"{h} h" if h else f"{m} min")
+
+
+@bp.app_template_filter("longdate")
+def longdate(day):
+    y, mo, d = day.split("-")
+    return f"{int(d)} {MONTHS[int(mo) - 1]} {y}"
+
+
+@bp.app_template_filter("monthname")
+def monthname(day, with_year=False):
+    y, mo = day.split("-")[:2]
+    return f"{MONTHS[int(mo) - 1]} {y}" if with_year else MONTHS[int(mo) - 1][:3]

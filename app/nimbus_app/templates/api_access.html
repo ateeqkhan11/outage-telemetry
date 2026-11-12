@@ -34,6 +34,7 @@
     <tr><td><span class="code">GET /api/v1/minutes?from=2026-11-11T14:00Z&amp;to=2026-11-11T15:00Z</span></td><td>Official state of each service, minute by minute. Up to 24 hours.</td></tr>
     <tr><td><span class="code">GET /api/v1/uptime?from=2026-11-01&amp;to=2026-11-07</span></td><td>Official uptime, outages and per-network numbers. Add <span class="code">daily=1</span> for daily rows. Up to 31 days.</td></tr>
     <tr><td><span class="code">GET /api/v1/outages?from=2026-11-01&amp;to=2026-11-30</span></td><td>Outage events under the trigger rules, with whether each 1 h and 2 h waiting period was met.</td></tr>
+    <tr><td><span class="code">GET /api/v1/history?from=2026-05-01&amp;to=2026-10-31</span></td><td>Daily official numbers per service, outages and probe-network coverage over long periods. Up to 400 days; the last 180 by default.</td></tr>
     <tr><td><span class="code">GET /api/v1/records/cloudflare/2026-11-11</span></td><td>That day's signed records from one network (JSON lines), exactly as signed.</td></tr>
     <tr><td><span class="code">GET /api/v1/keys</span></td><td>The networks' public keys, to check every signature yourself.</td></tr>
   </table></div>

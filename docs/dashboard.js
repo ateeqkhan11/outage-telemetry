@@ -32,7 +32,7 @@
         Live and counted now: ${s.independent_operators.length} (${esc(s.independent_operators.join(", ") || "none")}). Second network by 13 November. Every call is already measured and signed below.</div>`;
     } else {
       n.hidden = false;
-      n.innerHTML = `${pill("up", "Official")}<div><b>${s.independent_operators.length} independent operators counted: ${esc(s.independent_operators.join(" and "))}</b>
+      n.innerHTML = `${pill("up", "Official")}<div><b>${s.independent_operators.length} independent operators counted: ${esc(s.independent_operators.length > 2 ? s.independent_operators.slice(0, -1).join(", ") + " and " + s.independent_operators.slice(-1) : s.independent_operators.join(" and "))}</b>
         A service is called down when probes run by ${s.rules.operators_required} different companies see it failing (${Math.round(s.rules.window_fail_share * 100)}% or more of calls over ${s.rules.window_minutes} minutes) while their own connection works. Every call is signed and can be checked below.</div>`;
     }
 

@@ -26,7 +26,7 @@
     <h2 style="margin:0">{{ rep.from }} to {{ rep.to }}</h2>
     <a href="{{ url_for('web.reports_csv', **request.args.to_dict(flat=False)) if request.args else url_for('web.reports_csv', **{'from': rep.from, 'to': rep.to}) }}"><button type="button" class="secondary">Download CSV (daily rows)</button></a>
   </div>
-  <p class="muted" style="margin:6px 0 14px">{{ "{:,}".format(rep.minutes_judged) }} of {{ "{:,}".format(rep.minutes_in_range) }} minutes so far had data. Official uptime counts only minutes when at least {{ cfg.operators_required }} independent operators could judge; the rest are "undecided". Two independent operators have been live since 11 November 2026, 23:18 UTC.</p>
+  <p class="muted" style="margin:6px 0 14px">{{ "{:,}".format(rep.minutes_judged) }} of {{ "{:,}".format(rep.minutes_in_range) }} minutes so far had data. Official uptime counts only minutes when at least {{ cfg.operators_required }} independent operators could judge; the rest are "undecided".{% if not demo %} Two independent operators have been live since 11 November 2026, 23:18 UTC.{% endif %}</p>
   <div class="tiles">
     {% for s, v in rep.summary.items() %}
     <div class="tile"><h3>{{ names.get(s, s) }}</h3>

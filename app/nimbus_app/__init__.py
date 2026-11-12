@@ -14,6 +14,8 @@ Configuration (environment variables):
   NIMBUS_BASE_URL        e.g. https://app.nimbusindex.com (used in invite links made from the command line)
   NIMBUS_SECURE_COOKIES  1 behind HTTPS (default 1)
   NIMBUS_BEHIND_PROXY    1 when Caddy forwards requests (default 0)
+  NIMBUS_KEYS            folder of probe public keys          default <repo>/keys
+  NIMBUS_DEMO            1 = example-data copy (see demo.py): every page says the numbers are simulated
 """
 from __future__ import annotations
 
@@ -37,6 +39,8 @@ def create_app(overrides: dict = None) -> Flask:
         DB_PATH=os.environ.get("NIMBUS_DB", os.path.join(app.instance_path, "nimbus.db")),
         DATA_DIR=os.environ.get("NIMBUS_DATA", os.path.join(app.instance_path, "data")),
         REPO_DIR=str(repo),
+        KEYS_DIR=os.environ.get("NIMBUS_KEYS", str(repo / "keys")),
+        DEMO=os.environ.get("NIMBUS_DEMO", "0") == "1",
         DATA_REMOTE=os.environ.get("NIMBUS_DATA_REMOTE", "https://github.com/ateeqkhan11/outage-telemetry.git"),
         BASE_URL=os.environ.get("NIMBUS_BASE_URL", "http://localhost:8080"),
         SECURE_COOKIES=os.environ.get("NIMBUS_SECURE_COOKIES", "1") == "1",
@@ -85,7 +89,7 @@ def create_app(overrides: dict = None) -> Flask:
 
     @app.context_processor
     def _ctx():
-        return {"me": g.get("user"), "csrf": g.get("csrf") or auth.anon_csrf()}
+        return {"me": g.get("user"), "csrf": g.get("csrf") or auth.anon_csrf(), "demo": app.config["DEMO"]}
 
     @app.errorhandler(400)
     @app.errorhandler(403)

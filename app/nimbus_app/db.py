@@ -79,6 +79,23 @@ CREATE TABLE IF NOT EXISTS minute_counts (
   PRIMARY KEY (src, network, minute, service)
 );
 CREATE INDEX IF NOT EXISTS minute_counts_minute ON minute_counts (minute);
+
+-- daily roll-ups for long periods (history.py). service '*' = the region: down if any service is down.
+--   state_runs: every stretch of minutes that was not 'up' (minutes with no data count as 'unknown'), split at midnight
+CREATE TABLE IF NOT EXISTS state_runs (
+  day TEXT NOT NULL, service TEXT NOT NULL, state TEXT NOT NULL, start TEXT NOT NULL, end TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS state_runs_start ON state_runs (service, start);
+CREATE INDEX IF NOT EXISTS state_runs_day ON state_runs (day);
+CREATE TABLE IF NOT EXISTS daily_states (
+  day TEXT NOT NULL, service TEXT NOT NULL, up INTEGER NOT NULL, down INTEGER NOT NULL, unknown INTEGER NOT NULL,
+  PRIMARY KEY (day, service)
+);
+CREATE TABLE IF NOT EXISTS daily_networks (
+  day TEXT NOT NULL, network TEXT NOT NULL, minutes INTEGER NOT NULL, checks INTEGER NOT NULL, ok INTEGER NOT NULL,
+  lat_sum INTEGER NOT NULL, lat_n INTEGER NOT NULL,
+  PRIMARY KEY (day, network)
+);
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 """
 

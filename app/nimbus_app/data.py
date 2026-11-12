@@ -27,7 +27,7 @@ def networks() -> list:
 
 
 def public_keys() -> dict:
-    keys = Path(current_app.config["REPO_DIR"]) / "keys"
+    keys = Path(current_app.config["KEYS_DIR"])
     return {p.stem: p.read_text().strip() for p in sorted(keys.glob("*.pub"))}
 
 

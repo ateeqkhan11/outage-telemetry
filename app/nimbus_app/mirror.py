@@ -2,7 +2,8 @@
 
   sync(data_dir, db_path, repo_url)   git fetch the latest data branch (shallow), then ingest()
   ingest(data_dir, db_path, cfg)      count every new per-minute file into minute_counts; drop files that left runs/
-                                      (a fork moved to archive/forks/ by scripts/prune_forks.py)
+                                      (a fork moved to archive/forks/ by scripts/prune_forks.py); then refresh the
+                                      daily roll-ups (history.py) for the days that changed
 """
 from __future__ import annotations
 
@@ -13,6 +14,7 @@ from pathlib import Path
 
 from probe.detect import round_counts
 
+from . import history
 from .db import connect, now
 
 
@@ -58,11 +60,13 @@ def ingest(data_dir: str, db_path: str, cfg: dict) -> dict:
         seen[str(f.relative_to(root))] = f
     have = {r["src"]: r["size"] for r in con.execute("SELECT src, size FROM ingested_files")}
     added = removed = 0
+    changed = set()
     for src in sorted(set(have) - set(seen)):                 # moved away (e.g. an abandoned fork)
         con.execute("BEGIN")
         con.execute("DELETE FROM minute_counts WHERE src = ?", (src,))
         con.execute("DELETE FROM ingested_files WHERE src = ?", (src,))
         con.execute("COMMIT")
+        changed.add(src.split("/")[1])
         removed += 1
     for src in sorted(seen):
         f = seen[src]
@@ -79,10 +83,12 @@ def ingest(data_dir: str, db_path: str, cfg: dict) -> dict:
         con.execute("INSERT OR REPLACE INTO ingested_files (src, network, day, size, ingested_at) VALUES (?, ?, ?, ?, ?)",
                     (src, net, day, size, now()))
         con.execute("COMMIT")
+        changed.add(day)
         added += 1
+    rolled = history.rollup_days(con, cfg, history.days_to_refresh(con, changed))
     con.execute("INSERT OR REPLACE INTO meta (k, v) VALUES ('last_sync', ?)", (now(),))
     con.close()
-    return {"files_added": added, "files_removed": removed, "files_total": len(seen)}
+    return {"files_added": added, "files_removed": removed, "files_total": len(seen), "days_rolled_up": rolled}
 
 
 def sync(data_dir: str, db_path: str, repo_url: str, cfg: dict) -> dict:

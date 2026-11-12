@@ -1,0 +1,24 @@
+{# The trigger ladder: each outage as a bar on one shared time scale, crossed by amber waiting-period lines.
+   Same markup and classes as NimbusLadder in docs/dashboard.js. #}
+{% macro ladder(outages, waits, empty, link=True) %}
+{% if outages %}
+{% set longest = [outages | map(attribute='duration_min') | max, waits | max] | max %}
+{% set scale = ((longest * 1.08 / 60) | round(0, 'ceil') | int) * 60 %}
+<div class="ladder">
+  <div class="ladder-scale" aria-hidden="true"><span>Outage</span><div class="ticks">
+    {% for m in range(0, scale + 1, 60) %}<span style="left:{{ '%.2f' % (100 * m / scale) }}%" class="{{ 'att' if m in waits }}">{{ (m // 60 ~ ' h') if m else '0' }}{% if m in waits %}<em class="w" style="font-style:normal"> wait</em>{% endif %}</span>{% endfor %}
+  </div><span style="text-align:right">Length</span></div>
+  {% for o in outages | reverse %}
+  <div class="ladder-row">
+    <div class="lr-when"><b>{{ o.start[:10] | longdate }}</b><span>{{ o.start[11:16] }}–{{ 'ongoing' if o.ongoing else o.end[11:16] }} UTC{% if o.end[:10] != o.start[:10] and not o.ongoing %} next day{% endif %}</span></div>
+    <div class="lr-track" role="img" aria-label="{{ o.duration_min | dur }}"><span class="lr-bar{{ ' ongoing' if o.ongoing }}" style="--w:{{ '%.2f' % (100 * o.duration_min / scale) }}%;--i:{{ loop.index0 }}"></span>
+      {% for w in waits %}<span class="lr-att" style="left:{{ '%.2f' % (100 * w / scale) }}%"></span>{% endfor %}</div>
+    <div class="lr-dur">{{ o.duration_min | dur }}</div>
+    <div class="lr-meta">{{ o.services | map('svcname') | join(', ') }}
+      {% for w in waits %}{% set yes = o.meets_waiting_period[w | string] %}<span class="met{{ ' yes' if yes }}">{% if yes %}<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.4 5 8.8l4.6-5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>{% endif %}{{ w // 60 }} h {{ 'met' if yes else 'not met' }}</span>{% endfor %}
+      {% if link %}<a href="{{ url_for('web.reports_page', **{'from': o.start[:10], 'to': o.end[:10]}) }}">Minute detail</a>{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}<p class="ladder-empty">{{ empty }}</p>{% endif %}
+{% endmacro %}

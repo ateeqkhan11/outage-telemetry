@@ -1,0 +1,30 @@
+<section class="panel" aria-labelledby="svc-h">
+  <div class="panel-head"><div><h2 id="svc-h">Services, last 24 hours</h2>
+    <p>Each service is called 6 times a minute from every probe network. Bars are 10-minute steps; red is the share of calls that failed.</p></div></div>
+  <div class="tablewrap"><table class="svc-table"><thead><tr><th>Service</th><th>State</th><th>Failed calls, 24 h</th><th class="num">Calls OK</th><th>Median latency, last hour</th></tr></thead>
+    <tbody id="services"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody></table></div>
+</section>
+<section class="panel" aria-labelledby="ladder-h">
+  <div class="panel-head"><div><h2 id="ladder-h">Trigger ladder, last 24 hours</h2>
+    <p>Each outage called under the trigger rules, drawn against the 1-hour and 2-hour waiting periods (amber lines). A bar that crosses a line met that waiting period.</p></div></div>
+  <div id="outages"><p class="loading">Loading…</p></div>
+</section>
+<section class="panel" aria-labelledby="net-h">
+  <div class="panel-head"><div><h2 id="net-h">Probe networks</h2><p>Who measured, from where, and whether each network's signed chain checks out.</p></div></div>
+  <div class="tablewrap"><table class="stack-table"><thead><tr><th>Network</th><th>Company</th><th>Counted</th><th class="num">Last result</th><th class="num">Coverage, 24 h</th><th class="num">Longest gap</th><th>Signatures</th></tr></thead>
+    <tbody id="networks"></tbody></table></div>
+</section>
+<section class="panel" aria-labelledby="verify-h">
+  <div class="panel-head"><div><h2 id="verify-h">Check it yourself</h2>
+    <p>The latest signed record from a probe network. Your browser recomputes its fingerprint and checks the probe's signature, so you don't have to take our word for it. Nothing is sent anywhere.</p></div></div>
+  <div class="panel-body verify-grid">
+    <div><h3 id="record-from" style="margin-bottom:8px">Signed record</h3><pre id="record">Loading…</pre></div>
+    <div>
+      <button id="verify-btn" type="button" disabled>Verify this record</button>
+      <ol class="steps" id="verify-steps" hidden></ol>
+      <details class="disclose"><summary>The network's public key</summary>
+        <p class="muted small">It can only check signatures, never create them; the private key never leaves the probe's secret store.</p>
+        <pre id="pubkey"></pre></details>
+    </div>
+  </div>
+</section>

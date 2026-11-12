@@ -6,58 +6,65 @@
 <title>Nimbus Index · AWS us-east-1</title>
 <meta name="description" content="Independent, signed measurements of AWS us-east-1 availability.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
 <link rel="stylesheet" href="dashboard.css">
+<style>
+.pub-bar { background: var(--navy-deep); }
+.pub-bar div { max-width: 1180px; margin: 0 auto; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.pub-bar b { font: 700 20px var(--serif); color: #fff; }
+.pub-bar b::after { content: ""; display: inline-block; width: 7px; height: 7px; background: var(--amber); border-radius: 1px; margin-left: 6px; }
+.pub-bar span { color: var(--on-navy-soft); font-size: 14px; }
+</style>
 </head>
 <body>
-<div class="page">
-  <header>
+<header class="pub-bar"><div><b>Nimbus Index</b><span>Public dashboard · independent, signed measurements</span></div></header>
+<section class="band" aria-labelledby="state-title"><div class="band-in">
+  <div>
+    <h1 id="state-title" class="state-title">Loading the latest signed results</h1>
+    <div class="state-line"><span class="pill big s-unknown" id="overall">Loading</span><span class="updated" id="updated">AWS us-east-1, measured every minute by independent companies.</span></div>
+  </div>
+  <dl class="judges"><dt>Judged by</dt><dd id="judges"></dd><dd class="updated" id="judges-note" style="max-width:36ch;margin-top:10px"></dd></dl>
+</div></section>
+
+<main class="page">
+<section class="panel" aria-labelledby="svc-h">
+  <div class="panel-head"><div><h2 id="svc-h">Services, last 24 hours</h2>
+    <p>Each service is called 6 times a minute from every probe network. Bars are 10-minute steps; red is the share of calls that failed.</p></div></div>
+  <div class="tablewrap"><table class="svc-table"><thead><tr><th>Service</th><th>State</th><th>Failed calls, 24 h</th><th class="num">Calls OK</th><th>Median latency, last hour</th></tr></thead>
+    <tbody id="services"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody></table></div>
+</section>
+<section class="panel" aria-labelledby="ladder-h">
+  <div class="panel-head"><div><h2 id="ladder-h">Trigger ladder, last 24 hours</h2>
+    <p>Each outage called under the trigger rules, drawn against the 1-hour and 2-hour waiting periods (amber lines). A bar that crosses a line met that waiting period.</p></div></div>
+  <div id="outages"><p class="loading">Loading…</p></div>
+</section>
+<section class="panel" aria-labelledby="net-h">
+  <div class="panel-head"><div><h2 id="net-h">Probe networks</h2><p>Who measured, from where, and whether each network's signed chain checks out.</p></div></div>
+  <div class="tablewrap"><table class="stack-table"><thead><tr><th>Network</th><th>Company</th><th>Counted</th><th class="num">Last result</th><th class="num">Coverage, 24 h</th><th class="num">Longest gap</th><th>Signatures</th></tr></thead>
+    <tbody id="networks"></tbody></table></div>
+</section>
+<section class="panel" aria-labelledby="verify-h">
+  <div class="panel-head"><div><h2 id="verify-h">Check it yourself</h2>
+    <p>The latest signed record from a probe network. Your browser recomputes its fingerprint and checks the probe's signature, so you don't have to take our word for it. Nothing is sent anywhere.</p></div></div>
+  <div class="panel-body verify-grid">
+    <div><h3 id="record-from" style="margin-bottom:8px">Signed record</h3><pre id="record">Loading…</pre></div>
     <div>
-      <div class="brand">NIMBUS INDEX</div>
-      <h1>AWS us-east-1, measured independently</h1>
-      <div class="updated" id="updated">Loading the latest signed results…</div>
-    </div>
-    <span class="pill s-unknown big" id="overall">Loading</span>
-  </header>
-
-  <div class="notice" id="notice" hidden></div>
-
-  <section>
-    <h2>Services</h2>
-    <p class="muted" style="margin:0 0 12px">Each service is called 6 times a minute from every probe network. Bars show the last 24 hours in 10-minute steps; red is the share of calls that failed.</p>
-    <div class="grid" id="services"><p class="loading">Loading…</p></div>
-  </section>
-
-  <section>
-    <h2>Outages under the trigger rules (last 24 hours)</h2>
-    <div id="outages" class="muted">Loading…</div>
-  </section>
-
-  <section>
-    <h2>Probe networks</h2>
-    <div class="tablewrap"><table id="networks"><tr><th>Network</th><th>Operator</th><th>Counted</th><th>Last result</th><th>Coverage, 24 h</th><th>Longest gap</th><th>Signatures</th></tr></table></div>
-  </section>
-
-  <section>
-    <h2>Check it yourself</h2>
-    <div class="verify">
-      <p style="margin:0">This is the latest signed record from a probe network. Your browser recomputes its fingerprint from the content and checks the probe's signature, so you don't have to take our word for it. Nothing is sent anywhere.</p>
-      <pre id="record">Loading…</pre>
-      <details><summary class="muted" style="cursor:pointer;font-size:13.5px">Technical details</summary>
-        <p class="muted" style="font-size:13.5px;margin:8px 0 6px">The network's public key. It can only check signatures, never create them; the matching private key never leaves the probe's secret store.</p>
-        <pre id="pubkey"></pre></details>
-      <div><button id="verify-btn" type="button" disabled>Verify this record</button></div>
+      <button id="verify-btn" type="button" disabled>Verify this record</button>
       <ol class="steps" id="verify-steps" hidden></ol>
+      <details class="disclose"><summary>The network's public key</summary>
+        <p class="muted small">It can only check signatures, never create them; the private key never leaves the probe's secret store.</p>
+        <pre id="pubkey"></pre></details>
     </div>
-  </section>
+  </div>
+</section>
 
-  <footer>
-    Independent, signed measurements of AWS us-east-1. Each record is hash-chained and Ed25519-signed by the network that made it.
-    Raw data: <a id="data-link" href="https://github.com/ateeqkhan11/outage-telemetry/tree/data">data branch</a> ·
-    Code and rules: <a href="https://github.com/ateeqkhan11/outage-telemetry">github.com/ateeqkhan11/outage-telemetry</a> ·
-    <a href="backtest.html">Backtest of 16 past outages</a>
-  </footer>
-</div>
+<footer class="site">
+  Independent, signed measurements of AWS us-east-1. Each record is hash-chained and Ed25519-signed by the network that made it.
+  Raw data: <a id="data-link" href="https://github.com/ateeqkhan11/outage-telemetry/tree/data">data branch</a> ·
+  Code and rules: <a href="https://github.com/ateeqkhan11/outage-telemetry">github.com/ateeqkhan11/outage-telemetry</a> ·
+  <a href="backtest.html">Backtest of 16 past outages</a>
+</footer>
+</main>
 <script src="dashboard.js"></script>
 </body>
 </html>

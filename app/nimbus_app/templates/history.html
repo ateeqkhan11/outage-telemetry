@@ -1,49 +1,54 @@
 {% extends "base.html" %}{% block title %}History · Nimbus Index{% endblock %}
-{% set names = {"*": "Any service", "s3": "S3", "dynamodb": "DynamoDB", "lambda": "Lambda", "ec2": "EC2 API", "sts": "STS"} %}
-{% block body %}
-<section class="hist-head">
+{% from "_ladder.html" import ladder %}
+{% block band %}
+<section class="band"><div class="band-in">
   <div>
     <h1>History</h1>
-    <p class="lede">Every minute of AWS us-east-1, judged by trigger rules <span class="code">{{ cfg.version }}</span>. One square per day; select a day for its minute-by-minute report. All times UTC.</p>
+    <p class="lede">Every minute of AWS us-east-1, judged by trigger rules <span class="code-on-navy">{{ cfg.version }}</span>. Read each outage against the waiting periods a policy would set.</p>
   </div>
   <nav class="seg" aria-label="Period">
     {% for n, label in periods %}<a href="{{ url_for('web.history_page', days=n) }}" {% if n == days %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
   </nav>
-</section>
+</div></section>
+{% endblock %}
+{% block body %}
 {% if err %}<p class="alert err">{{ err }}</p>{% endif %}
 {% if ov %}
 {% set region = ov.summary['*'] %}
-<section class="tiles">
-  <div class="tile"><h3>Official uptime</h3><div class="big">{{ region.official_uptime_pct | pct }}</div>
-    <small>all five services, over {{ "{:,}".format(region.judged_minutes) }} judged minutes</small></div>
-  <div class="tile"><h3>Outages called</h3><div class="big">{{ ov.outages | length }}</div>
-    <small>{% if ov.outages %}longest {{ ov.longest_outage_min | dur }}{% else %}none in this period{% endif %}</small></div>
-  {% for w in cfg.waiting_periods_min %}
-  <div class="tile"><h3>Longer than {{ w // 60 }} h</h3><div class="big">{{ ov.waiting_periods_met[w|string] }}</div>
-    <small>outages that met a {{ w // 60 }}-hour waiting period</small></div>
-  {% endfor %}
-  <div class="tile"><h3>Minutes judged</h3><div class="big">{{ (100 * region.judged_minutes / ov.minutes_in_range) | round(1) if ov.minutes_in_range else 0 }}%</div>
-    <small>{{ "{:,}".format(region.undecided_minutes) }} min undecided (fewer than {{ cfg.operators_required }} operators could judge)</small></div>
+{% set counted = ov.networks.values() | selectattr('counted') | map(attribute='operator') | map('company') | list %}
+<section class="panel" aria-labelledby="terms-h">
+  <div class="panel-head"><h2 id="terms-h">Summary of terms</h2><span class="muted tnum">{{ ov.from | longdate }} to {{ ov.to | longdate }}</span></div>
+  <table class="deftable">
+    <tr><th scope="row"><dfn>Official uptime</dfn></th><td><b class="figure-sm">{{ region.official_uptime_pct | pct }}</b> all five services, over {{ "{:,}".format(region.judged_minutes) }} judged minutes</td></tr>
+    <tr><th scope="row"><dfn>Outages called</dfn></th><td><b class="figure-sm">{{ ov.outages | length }}</b> {% if ov.outages %}longest {{ ov.longest_outage_min | dur }}; {{ region.down_minutes | dur }} down in all{% else %}none in this period{% endif %}</td></tr>
+    {% for w in cfg.waiting_periods_min %}<tr class="attach"><th scope="row"><dfn>Met a {{ w // 60 }}-hour waiting period</dfn></th><td><b class="figure-sm">{{ ov.waiting_periods_met[w|string] }}</b> of {{ ov.outages | length }} outages ran {{ w // 60 }} h or longer</td></tr>{% endfor %}
+    <tr><th scope="row"><dfn>Judged by</dfn></th><td>{{ counted | join(', ') }}; any {{ cfg.operators_required }} must agree</td></tr>
+    <tr><th scope="row"><dfn>Undecided minutes</dfn></th><td class="tnum">{{ "{:,}".format(region.undecided_minutes) }}</td></tr>
+    <tr class="def-head"><th colspan="2">Definitions</th></tr>
+    <tr><th scope="row"><dfn>Judged minute</dfn></th><td>A minute in which probes run by at least {{ cfg.operators_required }} different companies have results.</td></tr>
+    <tr><th scope="row"><dfn>Down</dfn></th><td>At least {{ cfg.operators_required }} companies each see {{ (cfg.window_fail_share * 100) | round | int }}% or more of their calls to a service fail over the last {{ cfg.window_minutes }} minutes, while their own connection works.</td></tr>
+    <tr><th scope="row"><dfn>Undecided</dfn></th><td>Fewer than {{ cfg.operators_required }} companies had results, so no call is made either way. Never counted as up.</td></tr>
+    <tr><th scope="row"><dfn>Waiting period</dfn></th><td>How long an outage must last before a policy pays: {% for w in cfg.waiting_periods_min %}{{ w // 60 }} hour{{ 's' if w > 60 }}{{ ' or ' if not loop.last }}{% endfor %} here. An outage ends after {{ cfg.recovery_minutes }} clear minutes.</td></tr>
+    <tr><th scope="row"><dfn>Reference network</dfn></th><td>A probe inside AWS. Shown for comparison, never counted: AWS can't independently judge AWS.</td></tr>
+    <tr><th scope="row"><dfn>Trigger rules</dfn></th><td><span class="code">{{ cfg.version }}</span></td></tr>
+  </table>
 </section>
 
-<section>
-  <div class="row" style="justify-content:space-between;align-items:baseline">
-    <h2 style="margin:0">{{ ov.from | longdate }} to {{ ov.to | longdate }}</h2>
+<section class="panel" aria-labelledby="days-h">
+  <div class="panel-head"><div><h2 id="days-h">Day by day</h2><p>One square per day. Select a day for its minute-by-minute report.</p></div>
     <ul class="legend" aria-label="Legend">
       <li><i class="d-up"></i>Up all day</li><li><i class="d-minor"></i>Down under 1 h</li><li><i class="d-major"></i>Down 1 h or more</li>
       <li><i class="d-unk"></i>Undecided</li><li><i class="d-none"></i>No data</li>
-    </ul>
-  </div>
-  <div class="panel strips">
+    </ul></div>
+  <div class="panel-body strips">
     {% for k in ['*'] + ov.services %}{% set v = ov.summary[k] %}
     <div class="strip-row{% if k == '*' %} strip-region{% endif %}">
-      <div class="strip-label"><b>{{ names.get(k, k) }}</b>
-        <span class="num">{{ v.official_uptime_pct | pct }}</span>
+      <div class="strip-label"><b>{{ k | svcname }}</b><span class="num">{{ v.official_uptime_pct | pct }}</span>
         <small>{{ v.down_minutes | dur }} down</small></div>
       <div class="strip-scroll"><div class="strip" style="--n:{{ ov.days | length }}">
         {% for c in v.days %}<a class="d-{{ c.cls }}" href="{{ url_for('web.reports_page', **{'from': c.day, 'to': c.day}) }}"
           title="{{ c.day }}: {% if c.cls == 'none' %}no data{% elif c.cls == 'unk' %}undecided all day{% else %}{{ c.uptime | pct }} up{% if c.down %}, down {{ c.down | dur }}{% endif %}{% if c.unknown %}, {{ c.unknown }} min undecided{% endif %}{% endif %}"
-          aria-label="{{ names.get(k, k) }} {{ c.day }}"></a>{% endfor %}
+          aria-label="{{ k | svcname }} {{ c.day }}"></a>{% endfor %}
       </div></div>
     </div>
     {% endfor %}
@@ -54,39 +59,31 @@
   </div>
 </section>
 
-<section>
-  <h2>Outages under the trigger rules</h2>
-  {% if ov.outages %}
-  <div class="tablewrap"><table>
-    <tr><th>Start</th><th>End</th><th class="num">Length</th><th>Services</th>{% for w in cfg.waiting_periods_min %}<th>{{ w // 60 }} h wait met</th>{% endfor %}<th></th></tr>
-    {% for o in ov.outages | reverse %}<tr>
-      <td class="num">{{ o.start | replace('T', ' ') | replace('Z', '') }}</td><td class="num">{{ "ongoing" if o.ongoing else o.end | replace('T', ' ') | replace('Z', '') }}</td>
-      <td class="num">{{ o.duration_min | dur }}</td><td>{{ o.services | map('svcname') | join(", ") }}</td>
-      {% for w in cfg.waiting_periods_min %}<td>{% if o.meets_waiting_period[w|string] %}<span class="bad">Yes</span>{% else %}No{% endif %}</td>{% endfor %}
-      <td><a href="{{ url_for('web.reports_page', **{'from': o.start[:10], 'to': o.end[:10]}) }}">Minute detail</a></td></tr>{% endfor %}
-  </table></div>
-  {% else %}<p style="margin:0">None in this period. No service failed for {{ cfg.operators_required }} independent operators at once.</p>{% endif %}
+<section class="panel" aria-labelledby="ladder-h">
+  <div class="panel-head"><div><h2 id="ladder-h">Trigger ladder</h2>
+    <p>Every outage called in this period, newest first, against the 1-hour and 2-hour waiting periods (amber lines).</p></div></div>
+  {{ ladder(ov.outages, cfg.waiting_periods_min, "No outage called in this period. No service failed for " ~ cfg.operators_required ~ " independent companies at once.") }}
 </section>
 
-<section>
-  <h2>By month</h2>
-  <div class="tablewrap"><table>
-    <tr><th>Month</th>{% for k in ['*'] + ov.services %}<th class="num">{{ names.get(k, k) }}</th>{% endfor %}<th class="num">Outages</th></tr>
+<section class="panel" aria-labelledby="month-h">
+  <div class="panel-head"><h2 id="month-h">By month</h2></div>
+  <div class="tablewrap"><table class="stack-table">
+    <thead><tr><th>Month</th>{% for k in ['*'] + ov.services %}<th class="num">{{ k | svcname }}</th>{% endfor %}<th class="num">Outages</th></tr></thead>
     {% for m in ov.months | reverse %}<tr><td><b>{{ (m.month ~ '-01') | monthname(True) }}</b></td>
-      {% for k in ['*'] + ov.services %}{% set x = m.services[k] %}<td class="num">{% if x.judged %}{{ x.uptime | pct }}{% if x.down %}<br><span class="bad nowrap">{{ x.down | dur }} down</span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>{% endfor %}
-      <td class="num">{{ m.outages }}</td></tr>{% endfor %}
+      {% for k in ['*'] + ov.services %}{% set x = m.services[k] %}<td class="num" data-label="{{ k | svcname }}">{% if x.judged %}{{ x.uptime | pct }}{% if x.down %}<span class="cell-sub bad nowrap">{{ x.down | dur }} down</span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>{% endfor %}
+      <td class="num" data-label="Outages"><b>{{ m.outages }}</b></td></tr>{% endfor %}
   </table></div>
 </section>
 
-<section>
-  <h2>Probe networks</h2>
-  <div class="tablewrap"><table>
-    <tr><th>Network</th><th>Operator</th><th>Counted</th><th class="num">Coverage</th><th class="num">Calls</th><th class="num">Calls OK</th><th class="num">Avg latency</th></tr>
-    {% for n, v in ov.networks.items() %}<tr><td><b>{{ n }}</b></td><td>{{ v.operator }}</td><td>{{ "Yes" if v.counted else "No, reference" }}</td>
-      <td class="num">{{ v.coverage_pct | pct(1) }}</td><td class="num">{{ "{:,}".format(v.checks) }}</td><td class="num">{{ v.ok_pct | pct(3) }}</td>
-      <td class="num">{{ v.avg_latency_ms ~ " ms" if v.avg_latency_ms else "—" }}</td></tr>{% endfor %}
+<section class="panel" aria-labelledby="pn-h">
+  <div class="panel-head"><h2 id="pn-h">Probe networks</h2></div>
+  <div class="tablewrap"><table class="stack-table">
+    <thead><tr><th>Network</th><th>Company</th><th>Counted</th><th class="num">Coverage</th><th class="num">Calls</th><th class="num">Calls OK</th><th class="num">Avg latency</th></tr></thead>
+    {% for n, v in ov.networks.items() %}<tr><td><b>{{ n }}</b></td><td data-label="Company">{{ v.operator | company }}</td><td data-label="Counted">{{ "Yes" if v.counted else "No, inside AWS" }}</td>
+      <td class="num" data-label="Coverage">{{ v.coverage_pct | pct(1) }}</td><td class="num" data-label="Calls">{{ "{:,}".format(v.checks) }}</td><td class="num" data-label="Calls OK">{{ v.ok_pct | pct(3) }}</td>
+      <td class="num" data-label="Avg latency">{{ v.avg_latency_ms ~ " ms" if v.avg_latency_ms else "—" }}</td></tr>{% endfor %}
   </table></div>
-  <p class="muted" style="font-size:13.5px;margin:10px 0 0">A minute is judged only when probes run by at least {{ cfg.operators_required }} different companies have results; a failure counts when {{ (cfg.window_fail_share * 100) | round | int }}% or more of a company's calls over {{ cfg.window_minutes }} minutes fail while its own connection works. A gap in one network doesn't stop the judging while the others keep running. Reference networks run inside AWS and are shown, never counted.</p>
+  <div class="panel-foot">A gap in one network doesn't stop the judging while the others keep running. Terms are defined in the Summary of terms above.</div>
 </section>
 {% endif %}
 {% endblock %}

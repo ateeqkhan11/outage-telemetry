@@ -1,23 +1,29 @@
 {% extends "base.html" %}
-{% block body %}
-<div class="hero">
+{% block band %}
+<section class="band band-home"><div class="band-in">
   <div>
-    <div class="brand">PILOT PROGRAMME · AWS US-EAST-1</div>
-    <h1 style="margin-top:6px">Independent outage data for parametric cloud cover</h1>
-    <p class="lede">Probes run by different companies call AWS us-east-1 six times a minute. Every result is signed and chained, so an insurer can check a payout decision against a record nobody can quietly change, including us.</p>
-    <ul>
-      <li><b>Official calls</b>: a service is down only when two independent operators see it fail.</li>
-      <li><b>Reports</b>: official uptime, outages and per-network numbers for any period, with CSV and signed-record downloads.</li>
-      <li><b>API</b>: pull the same data into your own trigger checks.</li>
-    </ul>
-    <div class="row" style="margin-top:18px"><a href="{{ url_for('web.request_access') }}"><button type="button">Request pilot access</button></a>
-      <a href="{{ url_for('web.login') }}">Already invited? Sign in</a></div>
+    <h1>Independent outage data for parametric cloud cover</h1>
+    <p class="lede">Probes run by different companies call AWS us-east-1 six times a minute. A service is called down only when two of them see it fail, and every result is signed, so an insurer can check a payout decision against a record nobody can quietly change, including us.</p>
+    <div class="row" style="margin-top:24px"><a class="btn light" href="{{ url_for('web.request_access') }}">Request pilot access</a>
+      <a class="btn secondary" href="{{ url_for('web.login') }}">Already invited? Sign in</a></div>
   </div>
-  <aside class="panel">
-    <h2 style="font-size:18px">See it live first</h2>
-    <p style="margin:6px 0 0">The public dashboard shows today's status and lets you verify a signed record in your browser.</p>
-    <p><a href="{{ public }}" rel="noopener">Open the public dashboard</a></p>
-    <p class="muted" style="font-size:13.5px;margin:0">Pilot places are limited to a handful of firms, free during the pilot, in exchange for feedback on what the data should cover.</p>
-  </aside>
-</div>
+  <figure class="home-ladder" aria-label="How an outage is read: a bar crossing the 1-hour and 2-hour waiting periods">
+    <figcaption>How we read an outage</figcaption>
+    <div class="hl-track"><span class="hl-bar"></span><span class="hl-att" style="left:33.3%"><i>1 h wait</i></span><span class="hl-att" style="left:66.6%"><i>2 h wait</i></span></div>
+    <p>Each outage is measured to the minute and set against the waiting periods a policy uses, so "did it trigger?" has one answer.</p>
+  </figure>
+</div></section>
+{% endblock %}
+{% block body %}
+<section class="panel" aria-labelledby="key-h">
+  <div class="panel-head"><h2 id="key-h">Key terms of the pilot</h2></div>
+  <table class="deftable">
+    <tr><th scope="row"><dfn>Official call</dfn></th><td>A service is down only when two independent companies' probes see it fail while their own connection works. One provider's glitch can't trigger a payout.</td></tr>
+    <tr><th scope="row"><dfn>Signed record</dfn></th><td>Every call is hash-chained and Ed25519-signed by the network that made it. Anyone can check it, in the browser or with the public keys.</td></tr>
+    <tr><th scope="row"><dfn>History and reports</dfn></th><td>Official uptime, every outage against 1 h and 2 h waiting periods, per-network numbers, CSV and signed-record downloads.</td></tr>
+    <tr><th scope="row"><dfn>API</dfn></th><td>The same official calls and signed records, pulled into your own trigger checks.</td></tr>
+    <tr><th scope="row"><dfn>Pilot</dfn></th><td>A handful of firms, free during the pilot, in exchange for feedback on what the data should cover.</td></tr>
+  </table>
+  <div class="panel-foot">See today's data first on the <a href="{{ public }}" rel="noopener">public dashboard</a>.</div>
+</section>
 {% endblock %}

@@ -1,0 +1,1272 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T03:30:55+00:00",
+  "title": "Design System: Nimbus Index",
+  "extensions": {
+    "colorMeta": {
+      "navy": {
+        "role": "primary",
+        "displayName": "Term Sheet Navy",
+        "canonical": "#13294B",
+        "oklch": "oklch(28.3% 0.069 258.9)",
+        "tonalRamp": [
+          "#000827",
+          "#0E2446",
+          "#2B4266",
+          "#496288",
+          "#6984AC",
+          "#8BA7D1",
+          "#AECBF7",
+          "#D3F0FF"
+        ]
+      },
+      "navy-deep": {
+        "role": "primary",
+        "displayName": "Deep Navy",
+        "canonical": "#0C1C36",
+        "oklch": "oklch(22.8% 0.055 259.6)",
+        "tonalRamp": [
+          "#010922",
+          "#142540",
+          "#30425F",
+          "#4F6281",
+          "#6F83A4",
+          "#91A6C8",
+          "#B4CBEE",
+          "#D9F0FF"
+        ]
+      },
+      "navy-line": {
+        "role": "primary",
+        "displayName": "Navy Rule",
+        "canonical": "#2A426A",
+        "oklch": "oklch(38.0% 0.075 260.1)",
+        "tonalRamp": [
+          "#00072A",
+          "#0D2449",
+          "#2A426A",
+          "#48628C",
+          "#6883B0",
+          "#8AA6D5",
+          "#ADCBFB",
+          "#D2F0FF"
+        ]
+      },
+      "on-navy": {
+        "role": "primary",
+        "displayName": "On-Navy White",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "on-navy-soft": {
+        "role": "primary",
+        "displayName": "On-Navy Soft",
+        "canonical": "#B9C8DE",
+        "oklch": "oklch(82.8% 0.035 257.9)",
+        "tonalRamp": [
+          "#030B1A",
+          "#1A2636",
+          "#364355",
+          "#556275",
+          "#768398",
+          "#98A6BB",
+          "#BBCAE0",
+          "#E0F0FF"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "canonical": "#EDF0F4",
+        "oklch": "oklch(95.4% 0.006 255.5)",
+        "tonalRamp": [
+          "#090B0E",
+          "#232528",
+          "#404245",
+          "#5F6165",
+          "#808286",
+          "#A2A5A9",
+          "#C6C9CD",
+          "#ECEFF3"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "sunk": {
+        "role": "neutral",
+        "displayName": "Sunk Paper",
+        "canonical": "#F4F6F9",
+        "oklch": "oklch(97.2% 0.005 258.3)",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#242527",
+          "#404244",
+          "#606164",
+          "#818285",
+          "#A3A5A8",
+          "#C7C9CC",
+          "#EDEFF1"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#0E1726",
+        "oklch": "oklch(20.4% 0.033 260.3)",
+        "tonalRamp": [
+          "#040B19",
+          "#1C2535",
+          "#384254",
+          "#566274",
+          "#778397",
+          "#99A6BA",
+          "#BDCADF",
+          "#E2EFFF"
+        ]
+      },
+      "slate": {
+        "role": "neutral",
+        "displayName": "Slate",
+        "canonical": "#4A5869",
+        "oklch": "oklch(45.5% 0.033 253.5)",
+        "tonalRamp": [
+          "#030B19",
+          "#1A2635",
+          "#364353",
+          "#546374",
+          "#758496",
+          "#97A7BA",
+          "#BBCBDF",
+          "#E0F0FF"
+        ]
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint Slate",
+        "canonical": "#6B7889",
+        "oklch": "oklch(56.8% 0.031 255.2)",
+        "tonalRamp": [
+          "#040B18",
+          "#1B2634",
+          "#374352",
+          "#566273",
+          "#768495",
+          "#99A6B8",
+          "#BCCBDD",
+          "#E1F0FF"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#D6DDE6",
+        "oklch": "oklch(89.5% 0.014 254.6)",
+        "tonalRamp": [
+          "#070B11",
+          "#20262C",
+          "#3D434A",
+          "#5C626A",
+          "#7D838B",
+          "#9FA6AE",
+          "#C3CAD3",
+          "#E8EFF8"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule",
+        "canonical": "#AEB9C7",
+        "oklch": "oklch(78.2% 0.023 254.4)",
+        "tonalRamp": [
+          "#050C15",
+          "#1D2630",
+          "#3A434E",
+          "#58626F",
+          "#798390",
+          "#9BA6B4",
+          "#BFCAD9",
+          "#E4F0FE"
+        ]
+      },
+      "link": {
+        "role": "neutral",
+        "displayName": "Link Blue",
+        "canonical": "#1B4F9C",
+        "oklch": "oklch(43.9% 0.137 258.7)",
+        "tonalRamp": [
+          "#00003C",
+          "#001F5D",
+          "#133F80",
+          "#3460A4",
+          "#5482C9",
+          "#76A6F0",
+          "#99CBFF",
+          "#BDF1FF"
+        ]
+      },
+      "amber": {
+        "role": "secondary",
+        "displayName": "Attachment Amber",
+        "canonical": "#E0A526",
+        "oklch": "oklch(75.8% 0.147 80.8)",
+        "tonalRamp": [
+          "#220000",
+          "#411800",
+          "#623700",
+          "#845800",
+          "#A77914",
+          "#CC9C43",
+          "#F1C169",
+          "#FFE68E"
+        ]
+      },
+      "amber-ink": {
+        "role": "secondary",
+        "displayName": "Amber Ink",
+        "canonical": "#7D5200",
+        "oklch": "oklch(47.5% 0.100 74.2)",
+        "tonalRamp": [
+          "#210000",
+          "#401900",
+          "#613700",
+          "#83570A",
+          "#A67936",
+          "#CB9B5A",
+          "#F0C07E",
+          "#FFE5A2"
+        ]
+      },
+      "amber-bg": {
+        "role": "secondary",
+        "displayName": "Amber Wash",
+        "canonical": "#FBF0D2",
+        "oklch": "oklch(95.6% 0.041 90.2)",
+        "tonalRamp": [
+          "#120A00",
+          "#2D240B",
+          "#4A4128",
+          "#6A6146",
+          "#8C8267",
+          "#AFA488",
+          "#D3C9AB",
+          "#F9EED0"
+        ]
+      },
+      "on-amber": {
+        "role": "secondary",
+        "displayName": "On-Amber Ink",
+        "canonical": "#1A1200",
+        "oklch": "oklch(18.7% 0.038 89.1)",
+        "tonalRamp": [
+          "#120A00",
+          "#2C240E",
+          "#4A412A",
+          "#6A6048",
+          "#8B8268",
+          "#AFA48A",
+          "#D3C8AD",
+          "#F9EED2"
+        ]
+      },
+      "loss": {
+        "role": "tertiary",
+        "displayName": "Loss Red",
+        "canonical": "#C0392B",
+        "oklch": "oklch(54.3% 0.174 29.7)",
+        "tonalRamp": [
+          "#2D0000",
+          "#510000",
+          "#752017",
+          "#9A4236",
+          "#C06456",
+          "#E68778",
+          "#FFAB9B",
+          "#FFD0BF"
+        ]
+      },
+      "loss-ink": {
+        "role": "tertiary",
+        "displayName": "Loss Ink",
+        "canonical": "#A42B1F",
+        "oklch": "oklch(47.8% 0.159 29.7)",
+        "tonalRamp": [
+          "#2D0000",
+          "#510000",
+          "#752017",
+          "#9A4236",
+          "#C06456",
+          "#E68778",
+          "#FFAB9B",
+          "#FFD0BF"
+        ]
+      },
+      "loss-bg": {
+        "role": "tertiary",
+        "displayName": "Loss Wash",
+        "canonical": "#FBE6E3",
+        "oklch": "oklch(94.1% 0.023 27.3)",
+        "tonalRamp": [
+          "#140706",
+          "#30211F",
+          "#4E3D3B",
+          "#6E5C5A",
+          "#907D7B",
+          "#B3A09D",
+          "#D8C4C1",
+          "#FEE9E6"
+        ]
+      },
+      "loss-soft": {
+        "role": "tertiary",
+        "displayName": "Loss Soft",
+        "canonical": "#E9A39A",
+        "oklch": "oklch(78.1% 0.085 27.3)",
+        "tonalRamp": [
+          "#250000",
+          "#460E0C",
+          "#682E28",
+          "#8B4D46",
+          "#B06E66",
+          "#D59188",
+          "#FCB4AB",
+          "#FFD9D0"
+        ]
+      },
+      "inforce": {
+        "role": "tertiary",
+        "displayName": "In-Force Green",
+        "canonical": "#2E7D5B",
+        "oklch": "oklch(53.1% 0.095 161.9)",
+        "tonalRamp": [
+          "#001501",
+          "#003216",
+          "#005132",
+          "#207250",
+          "#479471",
+          "#6BB893",
+          "#8FDDB6",
+          "#B4FFDB"
+        ]
+      },
+      "inforce-ink": {
+        "role": "tertiary",
+        "displayName": "In-Force Ink",
+        "canonical": "#23664A",
+        "oklch": "oklch(46.0% 0.082 162.4)",
+        "tonalRamp": [
+          "#001402",
+          "#003018",
+          "#014F35",
+          "#2E7053",
+          "#519274",
+          "#74B596",
+          "#98DAB9",
+          "#BDFFDE"
+        ]
+      },
+      "inforce-bg": {
+        "role": "tertiary",
+        "displayName": "In-Force Wash",
+        "canonical": "#E1F1E8",
+        "oklch": "oklch(94.4% 0.021 161.5)",
+        "tonalRamp": [
+          "#040E08",
+          "#1C2822",
+          "#39463E",
+          "#57655D",
+          "#78867E",
+          "#9AA9A1",
+          "#BECEC5",
+          "#E3F3EA"
+        ]
+      },
+      "inforce-soft": {
+        "role": "tertiary",
+        "displayName": "In-Force Soft",
+        "canonical": "#A8D4BD",
+        "oklch": "oklch(83.2% 0.056 162.1)",
+        "tonalRamp": [
+          "#001204",
+          "#022D1C",
+          "#234B39",
+          "#436B57",
+          "#638D78",
+          "#86B19A",
+          "#A9D5BE",
+          "#CEFBE3"
+        ]
+      },
+      "undecided": {
+        "role": "tertiary",
+        "displayName": "Undecided Slate",
+        "canonical": "#5B6B7F",
+        "oklch": "oklch(52.2% 0.037 254.2)",
+        "tonalRamp": [
+          "#020B1A",
+          "#182637",
+          "#344356",
+          "#536376",
+          "#738499",
+          "#95A7BC",
+          "#B9CBE2",
+          "#DEF0FF"
+        ]
+      },
+      "undecided-bg": {
+        "role": "tertiary",
+        "displayName": "Undecided Wash",
+        "canonical": "#E6EBF1",
+        "oklch": "oklch(93.8% 0.010 252.8)",
+        "tonalRamp": [
+          "#080B0F",
+          "#22252A",
+          "#3E4247",
+          "#5D6267",
+          "#7E8388",
+          "#A1A5AB",
+          "#C5CACF",
+          "#EAEFF5"
+        ]
+      },
+      "undecided-soft": {
+        "role": "tertiary",
+        "displayName": "Undecided Soft",
+        "canonical": "#D3DAE3",
+        "oklch": "oklch(88.6% 0.015 254.6)",
+        "tonalRamp": [
+          "#070B11",
+          "#20262C",
+          "#3D434A",
+          "#5C626A",
+          "#7D838B",
+          "#9FA6AE",
+          "#C3CAD3",
+          "#E8EFF8"
+        ]
+      },
+      "bar-ok": {
+        "role": "neutral",
+        "displayName": "Bar OK",
+        "canonical": "#C5D1E0",
+        "oklch": "oklch(85.6% 0.025 254.0)",
+        "tonalRamp": [
+          "#050C15",
+          "#1D2631",
+          "#39434F",
+          "#58626F",
+          "#788391",
+          "#9BA6B5",
+          "#BECAD9",
+          "#E4F0FF"
+        ]
+      },
+      "bar-none": {
+        "role": "neutral",
+        "displayName": "Bar None",
+        "canonical": "#E3E8EE",
+        "oklch": "oklch(92.9% 0.010 252.8)",
+        "tonalRamp": [
+          "#080B0F",
+          "#22252A",
+          "#3E4247",
+          "#5D6267",
+          "#7E8388",
+          "#A1A5AB",
+          "#C5CACF",
+          "#EAEFF5"
+        ]
+      },
+      "dark-navy": {
+        "role": "primary",
+        "displayName": "Term Sheet Navy (dark)",
+        "canonical": "#102544",
+        "oklch": "oklch(26.6% 0.064 258.1)",
+        "tonalRamp": [
+          "#000925",
+          "#102544",
+          "#2C4264",
+          "#4A6286",
+          "#6B84A9",
+          "#8CA7CE",
+          "#B0CBF3",
+          "#D4F1FF"
+        ],
+        "lightTwin": "navy"
+      },
+      "dark-navy-deep": {
+        "role": "primary",
+        "displayName": "Deep Navy (dark)",
+        "canonical": "#08142A",
+        "oklch": "oklch(19.4% 0.048 261.3)",
+        "tonalRamp": [
+          "#020A1F",
+          "#18253C",
+          "#34425C",
+          "#52627D",
+          "#7283A0",
+          "#94A6C4",
+          "#B8CAE9",
+          "#DDF0FF"
+        ],
+        "lightTwin": "navy-deep"
+      },
+      "dark-navy-line": {
+        "role": "primary",
+        "displayName": "Navy Rule (dark)",
+        "canonical": "#24395C",
+        "oklch": "oklch(34.5% 0.067 260.1)",
+        "tonalRamp": [
+          "#000827",
+          "#102445",
+          "#2C4266",
+          "#4B6288",
+          "#6B83AB",
+          "#8DA6D0",
+          "#B0CBF6",
+          "#D5F0FF"
+        ],
+        "lightTwin": "navy-line"
+      },
+      "dark-on-navy-soft": {
+        "role": "primary",
+        "displayName": "On-Navy Soft (dark)",
+        "canonical": "#A9BAD3",
+        "oklch": "oklch(78.4% 0.040 257.9)",
+        "tonalRamp": [
+          "#020B1C",
+          "#182539",
+          "#354358",
+          "#536278",
+          "#74839B",
+          "#96A6BF",
+          "#B9CBE4",
+          "#DEF0FF"
+        ],
+        "lightTwin": "on-navy-soft"
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Cool Paper (dark)",
+        "canonical": "#0B1220",
+        "oklch": "oklch(18.3% 0.031 263.4)",
+        "tonalRamp": [
+          "#050B18",
+          "#1D2534",
+          "#394253",
+          "#586173",
+          "#798395",
+          "#9BA5B9",
+          "#BFCADE",
+          "#E4EFFF"
+        ],
+        "lightTwin": "ground"
+      },
+      "dark-paper": {
+        "role": "neutral",
+        "displayName": "Paper (dark)",
+        "canonical": "#121B2C",
+        "oklch": "oklch(22.3% 0.036 262.5)",
+        "tonalRamp": [
+          "#040B1A",
+          "#1C2537",
+          "#384255",
+          "#566276",
+          "#778399",
+          "#99A6BC",
+          "#BDCAE1",
+          "#E2EFFF"
+        ],
+        "lightTwin": "paper"
+      },
+      "dark-sunk": {
+        "role": "neutral",
+        "displayName": "Sunk Paper (dark)",
+        "canonical": "#172235",
+        "oklch": "oklch(25.2% 0.040 260.9)",
+        "tonalRamp": [
+          "#030B1C",
+          "#1A2538",
+          "#364257",
+          "#556278",
+          "#75839B",
+          "#97A6BE",
+          "#BBCAE4",
+          "#E0EFFF"
+        ],
+        "lightTwin": "sunk"
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Ink (dark)",
+        "canonical": "#E5EBF3",
+        "oklch": "oklch(93.8% 0.013 255.5)",
+        "tonalRamp": [
+          "#080B10",
+          "#21252B",
+          "#3E4249",
+          "#5D6268",
+          "#7D838A",
+          "#A0A6AD",
+          "#C4CAD1",
+          "#E9EFF7"
+        ],
+        "lightTwin": "ink"
+      },
+      "dark-slate": {
+        "role": "neutral",
+        "displayName": "Slate (dark)",
+        "canonical": "#A3B0C2",
+        "oklch": "oklch(75.3% 0.030 256.5)",
+        "tonalRamp": [
+          "#040B17",
+          "#1C2633",
+          "#384352",
+          "#566272",
+          "#778394",
+          "#99A6B8",
+          "#BDCADD",
+          "#E2F0FF"
+        ],
+        "lightTwin": "slate"
+      },
+      "dark-faint": {
+        "role": "neutral",
+        "displayName": "Faint Slate (dark)",
+        "canonical": "#8794A6",
+        "oklch": "oklch(66.2% 0.031 256.5)",
+        "tonalRamp": [
+          "#040B18",
+          "#1B2634",
+          "#384352",
+          "#566273",
+          "#778395",
+          "#99A6B9",
+          "#BDCADE",
+          "#E2F0FF"
+        ],
+        "lightTwin": "faint"
+      },
+      "dark-rule": {
+        "role": "neutral",
+        "displayName": "Rule (dark)",
+        "canonical": "#24314A",
+        "oklch": "oklch(31.4% 0.048 262.8)",
+        "tonalRamp": [
+          "#020A1F",
+          "#18253D",
+          "#34425C",
+          "#53617D",
+          "#7383A0",
+          "#95A6C4",
+          "#B9CAEA",
+          "#DDEFFF"
+        ],
+        "lightTwin": "rule"
+      },
+      "dark-rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule (dark)",
+        "canonical": "#3A4A66",
+        "oklch": "oklch(40.8% 0.052 261.3)",
+        "tonalRamp": [
+          "#020A20",
+          "#16253E",
+          "#32425E",
+          "#51627F",
+          "#7183A2",
+          "#93A6C6",
+          "#B7CAEC",
+          "#DCF0FF"
+        ],
+        "lightTwin": "rule-strong"
+      },
+      "dark-link": {
+        "role": "neutral",
+        "displayName": "Link Blue (dark)",
+        "canonical": "#8DB6F0",
+        "oklch": "oklch(76.9% 0.095 257.1)",
+        "tonalRamp": [
+          "#000431",
+          "#002352",
+          "#1E4273",
+          "#3D6296",
+          "#5D84BB",
+          "#7FA7E0",
+          "#A2CCFF",
+          "#C6F1FF"
+        ],
+        "lightTwin": "link"
+      },
+      "dark-action": {
+        "role": "primary",
+        "displayName": "Action Blue (dark)",
+        "canonical": "#2F5FA8",
+        "oklch": "oklch(49.1% 0.128 258.7)",
+        "tonalRamp": [
+          "#00003C",
+          "#001F5D",
+          "#133F80",
+          "#3460A4",
+          "#5482C9",
+          "#76A6F0",
+          "#99CBFF",
+          "#BDF1FF"
+        ],
+        "lightTwin": "action"
+      },
+      "dark-amber": {
+        "role": "secondary",
+        "displayName": "Attachment Amber (dark)",
+        "canonical": "#F0B83C",
+        "oklch": "oklch(81.3% 0.148 83.0)",
+        "tonalRamp": [
+          "#210000",
+          "#401A00",
+          "#603900",
+          "#825900",
+          "#A57A12",
+          "#C99E42",
+          "#EFC268",
+          "#FFE78D"
+        ],
+        "lightTwin": "amber"
+      },
+      "dark-amber-ink": {
+        "role": "secondary",
+        "displayName": "Amber Ink (dark)",
+        "canonical": "#F3C761",
+        "oklch": "oklch(84.9% 0.130 86.0)",
+        "tonalRamp": [
+          "#200000",
+          "#3E1B00",
+          "#5E3A00",
+          "#7F5A00",
+          "#A27C11",
+          "#C69F41",
+          "#ECC467",
+          "#FFE98D"
+        ],
+        "lightTwin": "amber-ink"
+      },
+      "dark-amber-bg": {
+        "role": "secondary",
+        "displayName": "Amber Wash (dark)",
+        "canonical": "#3A2C0C",
+        "oklch": "oklch(30.2% 0.051 84.9)",
+        "tonalRamp": [
+          "#150800",
+          "#302303",
+          "#4E4021",
+          "#6F5F3F",
+          "#90805F",
+          "#B4A381",
+          "#D9C7A4",
+          "#FEEDC8"
+        ],
+        "lightTwin": "amber-bg"
+      },
+      "dark-loss": {
+        "role": "tertiary",
+        "displayName": "Loss Red (dark)",
+        "canonical": "#F07A6C",
+        "oklch": "oklch(71.2% 0.148 28.3)",
+        "tonalRamp": [
+          "#2D0000",
+          "#510000",
+          "#751F19",
+          "#9A4238",
+          "#C06458",
+          "#E6867A",
+          "#FFAA9D",
+          "#FFD0C1"
+        ],
+        "lightTwin": "loss"
+      },
+      "dark-loss-ink": {
+        "role": "tertiary",
+        "displayName": "Loss Ink (dark)",
+        "canonical": "#F59487",
+        "oklch": "oklch(76.4% 0.119 28.3)",
+        "tonalRamp": [
+          "#2D0000",
+          "#510000",
+          "#75201A",
+          "#994239",
+          "#BF6459",
+          "#E6877A",
+          "#FFAB9D",
+          "#FFD0C1"
+        ],
+        "lightTwin": "loss-ink"
+      },
+      "dark-loss-bg": {
+        "role": "tertiary",
+        "displayName": "Loss Wash (dark)",
+        "canonical": "#3D1814",
+        "oklch": "oklch(26.4% 0.059 28.0)",
+        "tonalRamp": [
+          "#1E0001",
+          "#3D1814",
+          "#5E3530",
+          "#80544E",
+          "#A3756F",
+          "#C89790",
+          "#EDBBB4",
+          "#FFE0D9"
+        ],
+        "lightTwin": "loss-bg"
+      },
+      "dark-loss-soft": {
+        "role": "tertiary",
+        "displayName": "Loss Soft (dark)",
+        "canonical": "#8C3B33",
+        "oklch": "oklch(46.0% 0.112 27.9)",
+        "tonalRamp": [
+          "#2C0000",
+          "#4E0000",
+          "#72231D",
+          "#97443C",
+          "#BC665C",
+          "#E3897D",
+          "#FFADA0",
+          "#FFD2C5"
+        ],
+        "lightTwin": "loss-soft"
+      },
+      "dark-inforce": {
+        "role": "tertiary",
+        "displayName": "In-Force Green (dark)",
+        "canonical": "#5CC495",
+        "oklch": "oklch(74.6% 0.120 161.9)",
+        "tonalRamp": [
+          "#001700",
+          "#003410",
+          "#00542D",
+          "#00754B",
+          "#29986C",
+          "#54BC8E",
+          "#7AE2B1",
+          "#A1FFD6"
+        ],
+        "lightTwin": "inforce"
+      },
+      "dark-inforce-ink": {
+        "role": "tertiary",
+        "displayName": "In-Force Ink (dark)",
+        "canonical": "#7AD3AA",
+        "oklch": "oklch(80.0% 0.105 162.8)",
+        "tonalRamp": [
+          "#001600",
+          "#003315",
+          "#005231",
+          "#06734F",
+          "#3B9670",
+          "#61BA92",
+          "#86DFB5",
+          "#ABFFDA"
+        ],
+        "lightTwin": "inforce-ink"
+      },
+      "dark-inforce-bg": {
+        "role": "tertiary",
+        "displayName": "In-Force Wash (dark)",
+        "canonical": "#12301F",
+        "oklch": "oklch(28.0% 0.048 156.5)",
+        "tonalRamp": [
+          "#001104",
+          "#0E2C1B",
+          "#2C4A37",
+          "#4B6A56",
+          "#6B8B77",
+          "#8DAF99",
+          "#B1D3BD",
+          "#D5F9E1"
+        ],
+        "lightTwin": "inforce-bg"
+      },
+      "dark-inforce-soft": {
+        "role": "tertiary",
+        "displayName": "In-Force Soft (dark)",
+        "canonical": "#2F6B4D",
+        "oklch": "oklch(47.9% 0.080 159.4)",
+        "tonalRamp": [
+          "#001401",
+          "#003016",
+          "#0D4F32",
+          "#336F51",
+          "#559171",
+          "#78B593",
+          "#9CDAB7",
+          "#C1FFDC"
+        ],
+        "lightTwin": "inforce-soft"
+      },
+      "dark-undecided": {
+        "role": "tertiary",
+        "displayName": "Undecided Slate (dark)",
+        "canonical": "#A3B0C2",
+        "oklch": "oklch(75.3% 0.030 256.5)",
+        "tonalRamp": [
+          "#040B17",
+          "#1C2633",
+          "#384352",
+          "#566272",
+          "#778394",
+          "#99A6B8",
+          "#BDCADD",
+          "#E2F0FF"
+        ],
+        "lightTwin": "undecided"
+      },
+      "dark-undecided-bg": {
+        "role": "tertiary",
+        "displayName": "Undecided Wash (dark)",
+        "canonical": "#1D2738",
+        "oklch": "oklch(27.2% 0.035 260.8)",
+        "tonalRamp": [
+          "#040B1A",
+          "#1B2536",
+          "#374255",
+          "#566275",
+          "#778398",
+          "#99A6BB",
+          "#BDCAE0",
+          "#E1EFFF"
+        ],
+        "lightTwin": "undecided-bg"
+      },
+      "dark-undecided-soft": {
+        "role": "tertiary",
+        "displayName": "Undecided Soft (dark)",
+        "canonical": "#34425A",
+        "oklch": "oklch(37.7% 0.045 261.0)",
+        "tonalRamp": [
+          "#020A1E",
+          "#18253B",
+          "#34425A",
+          "#53627B",
+          "#73839E",
+          "#95A6C2",
+          "#B9CAE7",
+          "#DEF0FF"
+        ],
+        "lightTwin": "undecided-soft"
+      },
+      "dark-bar-ok": {
+        "role": "neutral",
+        "displayName": "Bar OK (dark)",
+        "canonical": "#2C3B55",
+        "oklch": "oklch(35.1% 0.050 261.1)",
+        "tonalRamp": [
+          "#020A20",
+          "#17253D",
+          "#33425D",
+          "#51627E",
+          "#7283A1",
+          "#94A6C5",
+          "#B7CAEA",
+          "#DCF0FF"
+        ],
+        "lightTwin": "bar-ok"
+      },
+      "dark-bar-none": {
+        "role": "neutral",
+        "displayName": "Bar None (dark)",
+        "canonical": "#1A2436",
+        "oklch": "oklch(26.0% 0.037 261.8)",
+        "tonalRamp": [
+          "#040B1B",
+          "#1B2537",
+          "#374256",
+          "#566277",
+          "#768399",
+          "#98A6BD",
+          "#BCCAE2",
+          "#E1EFFF"
+        ],
+        "lightTwin": "bar-none"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing band headline only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "The one h1 per page, white in the navy band."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel headings."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Key numbers in defined-terms tables (17px elsewhere)."
+      },
+      "defined-term": {
+        "displayName": "Defined Term",
+        "purpose": "Term column of defined-terms tables; service names at 16px."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "Nimbus Index in the shell."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "Band introductions, max 64ch."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text."
+      },
+      "subhead": {
+        "displayName": "Subhead",
+        "purpose": "h3 inside panels."
+      },
+      "table": {
+        "displayName": "Table",
+        "purpose": "Every table cell, tabular figures."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Table heads, legends, stacked-cell labels; sentence case."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Keys, signed records, endpoints, rule versions."
+      }
+    },
+    "shadows": [
+      {
+        "name": "hairline-drop",
+        "value": "0 1px 0 rgba(14, 23, 38, .05)",
+        "purpose": "Panels in light mode; none in dark mode."
+      },
+      {
+        "name": "input-focus-ring",
+        "value": "0 0 0 3px <ring>",
+        "purpose": "Input focus, paired with a navy border. Ring colour is open (see drift note)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ladder-grow",
+        "value": "1.1s cubic-bezier(.16, 1, .3, 1), stagger 60ms per row",
+        "purpose": "Ladder bars grow from the left on load; off under prefers-reduced-motion."
+      },
+      {
+        "name": "home-ladder-grow",
+        "value": "1.6s cubic-bezier(.16, 1, .3, 1) .2s",
+        "purpose": "The landing band's drawn ladder figure."
+      },
+      {
+        "name": "state-change",
+        "value": "0.15s",
+        "purpose": "Background, border and colour transitions on buttons, tabs, inputs."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "filterbar",
+        "value": "980px"
+      },
+      {
+        "name": "single-column",
+        "value": "900px"
+      },
+      {
+        "name": "shell-wrap",
+        "value": "760px"
+      },
+      {
+        "name": "stacked-tables",
+        "value": "720px"
+      },
+      {
+        "name": "full-width-strip",
+        "value": "640px"
+      }
+    ],
+    "themes": {
+      "light": "default",
+      "dark": "prefers-color-scheme: dark unless :root[data-theme=light]; or :root[data-theme=dark]. Every dark-* token replaces its light twin."
+    },
+    "driftNotCanonized": [
+      "Amber still appears outside the Reserved Amber Rule in the build: current-tab underline, wordmark square (app shell and public bar), :focus-visible outline, ::selection, input focus ring and caret, the shown-once key/invite panel (.reveal, .key), and the admin 'new' tag. Not recorded as system rules.",
+      "Amber 2px focus outline on paper is about 2:1 contrast, below the 3:1 non-text minimum.",
+      ".btn.amber and the .terms tile grid (34px figures) remain in app.css but no template uses them."
+    ]
+  },
+  "components": [
+    {
+      "name": "Shell Bar",
+      "kind": "nav",
+      "refersTo": "shell",
+      "description": "Deep navy top bar with serif wordmark and tabs; current tab white with a 3px underline.",
+      "html": "<header class=\"ds-shell\"><a class=\"ds-wordmark\" href=\"#\">Nimbus Index</a><nav class=\"ds-nav\"><a href=\"#\" aria-current=\"page\">Dashboard</a><a href=\"#\">History</a><a href=\"#\">Reports</a><a href=\"#\">API access</a></nav><span class=\"ds-pilot\">Pilot</span></header>",
+      "css": ".ds-shell{background:#0C1C36;color:#fff;display:flex;align-items:stretch;gap:0 28px;min-height:58px;padding:0 24px;font-family:'Public Sans',Arial,sans-serif}.ds-wordmark{align-self:center;font:700 20px 'Source Serif 4',Georgia,serif;letter-spacing:-0.01em;color:#fff;text-decoration:none}.ds-nav{display:flex;gap:4px;flex:1}.ds-nav a{color:#B9C8DE;text-decoration:none;padding:0 12px;font-weight:500;font-size:14.5px;display:flex;align-items:center;border-top:3px solid transparent;border-bottom:3px solid transparent;transition:color .15s,border-color .15s}.ds-nav a:hover{color:#fff}.ds-nav a[aria-current=page]{color:#fff;font-weight:600;border-bottom-color:#fff}.ds-nav a:focus-visible{outline:2px solid #fff;outline-offset:-2px}.ds-pilot{align-self:center;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;border:1px solid #2A426A;padding:2px 8px;border-radius:3px}"
+    },
+    {
+      "name": "Title Band",
+      "kind": "custom",
+      "refersTo": "band",
+      "description": "Navy band carrying the page's one statement, a state bar, a state pill and the verified seal.",
+      "html": "<section class=\"ds-band\"><div><h1 class=\"ds-h1\">AWS us-east-1 is up</h1><span class=\"ds-pill\">Up</span></div><div class=\"ds-judges\"><span class=\"ds-seal\">Signed · 3 chains valid</span></div></section>",
+      "css": ".ds-band{background:#13294B;color:#fff;padding:34px 24px 38px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 40px;align-items:center;font-family:'Public Sans',Arial,sans-serif}.ds-h1{margin:0 0 14px;font:600 40px/1.08 'Source Serif 4',Georgia,serif;letter-spacing:-0.015em;padding-bottom:14px;position:relative}.ds-h1::after{content:'';position:absolute;left:0;bottom:0;width:72px;height:4px;border-radius:2px;background:#A8D4BD}.ds-pill{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:14px;padding:5px 14px 5px 11px;border-radius:99px;background:#E1F1E8;color:#23664A}.ds-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}.ds-judges{border-left:1px solid #2A426A;padding-left:24px}.ds-seal{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#1A1200;background:#E0A526;padding:5px 11px 5px 9px;border-radius:99px}"
+    },
+    {
+      "name": "Ruled Panel and Table",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "White ruled panel with a serif title and a sunk-headed ruled table with tabular numbers.",
+      "html": "<section class=\"ds-panel\"><div class=\"ds-head\"><h2>Services, last 24 hours</h2><p>Bars are 10-minute steps.</p></div><table class=\"ds-table\"><thead><tr><th>Service</th><th>State</th><th class=\"n\">Calls OK</th></tr></thead><tbody><tr><td class=\"svc\">S3</td><td><span class=\"ds-p up\">Up</span></td><td class=\"n\">99.998%</td></tr><tr><td class=\"svc\">Lambda</td><td><span class=\"ds-p down\">Down</span></td><td class=\"n\">71.204%</td></tr><tr><td class=\"svc\">EC2 API</td><td><span class=\"ds-p unk\">Undecided</span></td><td class=\"n\">—</td></tr></tbody></table></section>",
+      "css": ".ds-panel{background:#fff;border:1px solid #D6DDE6;border-radius:4px;box-shadow:0 1px 0 rgba(14,23,38,.05);font:15px/1.55 'Public Sans',Arial,sans-serif;color:#0E1726}.ds-head{padding:18px 22px 14px;border-bottom:1px solid #D6DDE6}.ds-head h2{margin:0;font:600 22px/1.2 'Source Serif 4',Georgia,serif}.ds-head p{margin:4px 0 0;color:#4A5869;font-size:14px}.ds-table{border-collapse:collapse;width:100%;font-size:14px}.ds-table th,.ds-table td{text-align:left;padding:11px 14px;border-bottom:1px solid #D6DDE6}.ds-table th{font-size:12.5px;font-weight:600;color:#4A5869;background:#F4F6F9;border-bottom-color:#AEB9C7}.ds-table th:first-child,.ds-table td:first-child{padding-left:22px}.ds-table tr:last-child td{border-bottom:0}.ds-table .n{text-align:right;font-variant-numeric:tabular-nums lining-nums;padding-right:22px}.ds-table .svc{font:600 16px 'Source Serif 4',Georgia,serif}.ds-table tbody tr:hover td{background:#F4F6F9}.ds-p{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:13px;padding:3px 11px 3px 9px;border-radius:99px}.ds-p::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}.ds-p.up{color:#23664A;background:#E1F1E8}.ds-p.down{color:#A42B1F;background:#FBE6E3}.ds-p.unk{color:#5B6B7F;background:#E6EBF1}"
+    },
+    {
+      "name": "Defined-Terms Table",
+      "kind": "custom",
+      "refersTo": "deftable-term",
+      "description": "Summary of terms: serif defined terms beside their meaning; attachment rows marked in amber.",
+      "html": "<table class=\"ds-def\"><tr><th><dfn>Official uptime</dfn></th><td><b class=\"fig\">99.712%</b> all five services</td></tr><tr class=\"att\"><th><dfn>Met a 1-hour waiting period</dfn></th><td><b class=\"fig\">4</b> of 8 outages ran 1 h or longer</td></tr><tr class=\"hd\"><th colspan=\"2\">Definitions</th></tr><tr><th><dfn>Undecided</dfn></th><td>Fewer than 2 companies had results. Never counted as up.</td></tr></table>",
+      "css": ".ds-def{border-collapse:collapse;width:100%;font:14px/1.55 'Public Sans',Arial,sans-serif;color:#0E1726;background:#fff}.ds-def th,.ds-def td{text-align:left;padding:11px 14px;border-bottom:1px solid #D6DDE6;vertical-align:top}.ds-def th{width:32%;padding-left:22px}.ds-def dfn{font:600 15.5px 'Source Serif 4',Georgia,serif;font-style:normal}.ds-def .fig{font:600 19px 'Source Serif 4',Georgia,serif;font-variant-numeric:tabular-nums lining-nums;margin-right:6px}.ds-def tr.att dfn::before{content:'';display:inline-block;width:2px;height:12px;background:#E0A526;margin-right:8px;vertical-align:-1px}.ds-def tr.att .fig{color:#7D5200}.ds-def tr.hd th{background:#F4F6F9;border-top:2px solid #AEB9C7;font-size:12.5px;font-weight:600;color:#4A5869}"
+    },
+    {
+      "name": "Trigger Ladder",
+      "kind": "custom",
+      "refersTo": "ladder-bar",
+      "description": "Signature: each outage a loss-red bar on a shared scale crossed by amber waiting-period lines, with met / not met marks.",
+      "html": "<div class=\"ds-ladder\"><div class=\"sc\"><span></span><div class=\"tk\"><span style=\"left:0\">0</span><span class=\"a\" style=\"left:33.3%\">1 h wait</span><span class=\"a\" style=\"left:66.6%\">2 h wait</span></div><span></span></div><div class=\"row\"><div class=\"w\"><b>16 Oct 2026</b><span>11:20–16:13 UTC</span></div><div class=\"tr\"><span class=\"bar\" style=\"width:81%\"></span><span class=\"att\" style=\"left:33.3%\"></span><span class=\"att\" style=\"left:66.6%\"></span></div><div class=\"d\">4 h 53 min</div><div class=\"m\">DynamoDB, Lambda <span class=\"met y\">1 h met</span><span class=\"met y\">2 h met</span></div></div><div class=\"row\"><div class=\"w\"><b>29 Jun 2026</b><span>09:41–10:01 UTC</span></div><div class=\"tr\"><span class=\"bar\" style=\"width:6%\"></span><span class=\"att\" style=\"left:33.3%\"></span><span class=\"att\" style=\"left:66.6%\"></span></div><div class=\"d\">20 min</div><div class=\"m\">S3 <span class=\"met\">1 h not met</span><span class=\"met\">2 h not met</span></div></div></div>",
+      "css": ".ds-ladder{background:#fff;font:14px/1.5 'Public Sans',Arial,sans-serif;color:#0E1726}.ds-ladder .sc,.ds-ladder .row{display:grid;grid-template-columns:150px minmax(0,1fr) 92px;gap:16px;align-items:center;padding:0 22px}.ds-ladder .sc{height:34px;background:#F4F6F9;border-bottom:1px solid #AEB9C7;font-size:12px;color:#4A5869}.ds-ladder .tk{position:relative;height:100%}.ds-ladder .tk span{position:absolute;bottom:7px;transform:translateX(-50%);white-space:nowrap}.ds-ladder .tk span:first-child{transform:none}.ds-ladder .tk .a{color:#7D5200;font-weight:700}.ds-ladder .row{padding-top:13px;padding-bottom:13px;border-bottom:1px solid #D6DDE6}.ds-ladder .w b,.ds-ladder .w span{display:block}.ds-ladder .w span{font-size:12.5px;color:#4A5869}.ds-ladder .tr{position:relative;height:26px}.ds-ladder .tr::before{content:'';position:absolute;inset:11px 0;background:#F4F6F9;border-radius:2px}.ds-ladder .bar{position:absolute;left:0;top:4px;bottom:4px;min-width:3px;background:#C0392B;border-radius:2px;transform-origin:left;animation:ds-grow 1.1s cubic-bezier(.16,1,.3,1) both}.ds-ladder .att{position:absolute;top:-13px;bottom:-13px;width:2px;margin-left:-1px;background:#E0A526}.ds-ladder .d{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.ds-ladder .m{grid-column:2/4;display:flex;flex-wrap:wrap;gap:6px 10px;font-size:13px;color:#4A5869;margin-top:-4px}.ds-ladder .met{font-size:12px;font-weight:700;padding:1px 8px;border-radius:3px;border:1px solid #E0A526;color:#7D5200}.ds-ladder .met.y{background:#E0A526;color:#1A1200}@keyframes ds-grow{from{transform:scaleX(.02)}to{transform:scaleX(1)}}@media (prefers-reduced-motion:reduce){.ds-ladder .bar{animation:none}}"
+    },
+    {
+      "name": "Day Squares",
+      "kind": "custom",
+      "refersTo": "day-square-up",
+      "description": "One linked cell per day on a shared grid; three inks plus hatched undecided and empty no-data.",
+      "html": "<div class=\"ds-strip\" style=\"--n:14\"><a class=\"u\" href=\"#\"></a><a class=\"u\" href=\"#\"></a><a class=\"mi\" href=\"#\"></a><a class=\"u\" href=\"#\"></a><a class=\"ma\" href=\"#\"></a><a class=\"u\" href=\"#\"></a><a class=\"k\" href=\"#\"></a><a class=\"u\" href=\"#\"></a><a class=\"u\" href=\"#\"></a><a class=\"u\" href=\"#\"></a><a class=\"mi\" href=\"#\"></a><a class=\"u\" href=\"#\"></a><a class=\"no\" href=\"#\"></a><a class=\"u\" href=\"#\"></a></div>",
+      "css": ".ds-strip{display:grid;grid-template-columns:repeat(var(--n),minmax(3px,1fr));gap:1px;background:#fff;padding:12px}.ds-strip a{height:30px;border-radius:1px;display:block}.ds-strip a:hover,.ds-strip a:focus-visible{outline:2px solid #0E1726;outline-offset:0;position:relative;z-index:1}.ds-strip .u{background:#A8D4BD}.ds-strip .mi{background:#E9A39A}.ds-strip .ma{background:#C0392B}.ds-strip .k{background:repeating-linear-gradient(135deg,#D3DAE3 0 2px,transparent 2px 4px);background-color:#E6EBF1}.ds-strip .no{background:#E3E8EE}"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Navy fill, white 600 text, 4px corners; hover deep navy.",
+      "html": "<button class=\"ds-btn\">Run report</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;gap:8px;font:600 14.5px 'Public Sans',Arial,sans-serif;padding:10px 18px;border-radius:4px;border:1px solid #13294B;background:#13294B;color:#fff;cursor:pointer;transition:background .15s,border-color .15s}.ds-btn:hover{background:#0C1C36;border-color:#0C1C36}.ds-btn:focus-visible{outline:2px solid #13294B;outline-offset:2px}.ds-btn:disabled{opacity:.5;cursor:not-allowed}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Paper fill, navy text, strong-rule border; hover navy border on sunk.",
+      "html": "<button class=\"ds-btn2\">Download CSV (daily rows)</button>",
+      "css": ".ds-btn2{font:600 14.5px 'Public Sans',Arial,sans-serif;padding:10px 18px;border-radius:4px;border:1px solid #AEB9C7;background:#fff;color:#13294B;cursor:pointer;transition:background .15s,border-color .15s}.ds-btn2:hover{border-color:#13294B;background:#F4F6F9}.ds-btn2:focus-visible{outline:2px solid #13294B;outline-offset:2px}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Paper fill, loss-ink text; hover loss border on loss wash.",
+      "html": "<button class=\"ds-btn3\">Revoke</button>",
+      "css": ".ds-btn3{font:600 14.5px 'Public Sans',Arial,sans-serif;padding:10px 18px;border-radius:4px;border:1px solid #AEB9C7;background:#fff;color:#A42B1F;cursor:pointer;transition:background .15s,border-color .15s}.ds-btn3:hover{border-color:#C0392B;background:#FBE6E3}.ds-btn3:focus-visible{outline:2px solid #13294B;outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Stacked label, paper field with strong-rule border; focus navy border and 3px ring.",
+      "html": "<label class=\"ds-label\">Work email<input class=\"ds-input\" type=\"email\" placeholder=\"you@insurer.com\"></label>",
+      "css": ".ds-label{display:flex;flex-direction:column;gap:6px;font:600 14px 'Public Sans',Arial,sans-serif;color:#0E1726;max-width:360px}.ds-input{font:400 15px 'Public Sans',Arial,sans-serif;color:#0E1726;background:#fff;border:1px solid #AEB9C7;border-radius:4px;padding:10px 12px;transition:border-color .15s,box-shadow .15s}.ds-input:hover{border-color:#4A5869}.ds-input:focus{outline:none;border-color:#13294B;box-shadow:0 0 0 3px rgba(19,41,75,.25)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Term Sheet",
+    "overview": "Every page reads like a cat-bond offering circular: a navy cover band stating the one thing that matters, then white ruled schedules on a cool paper ground. Every outage is read against its attachment points on the trigger ladder: a duration bar on one shared scale, crossed by amber 1 h and 2 h waiting-period lines and marked met where it passes them. Density is that of a working document; numbers sit in ruled tables and defined-terms schedules, never in floating tiles.",
+    "keyCharacteristics": [
+      "Navy shell and title band; everything below on paper",
+      "1px rules, 4px corners, no lifted shadows",
+      "Amber reserved for attachment points and verification",
+      "Loss red, in-force green, hatched undecided slate",
+      "Serif for titles, defined terms and key figures; sans with tabular figures for UI and tables"
+    ],
+    "rules": [
+      {
+        "name": "The Reserved Amber Rule",
+        "body": "Amber means only an attachment point or a verification result. The Example data banner is the one exception.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Inks Rule",
+        "body": "Loss red for down, in-force green for up, undecided slate (hatched) for no call. Undecided is never green.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark Twin Rule",
+        "body": "Every colour token has a dark-* twin; shadows drop to none in dark mode.",
+        "section": "colors"
+      },
+      {
+        "name": "The Defined Terms Rule",
+        "body": "Terms a reader relies on are serif defined terms beside their meaning, never stat tiles.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Comparable numbers use tabular lining numerals and right-align in tables.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Column Rule",
+        "body": "One reading column of ruled panels; two-up grids collapse at 900px.",
+        "section": "layout"
+      },
+      {
+        "name": "The Ruled Not Lifted Rule",
+        "body": "Separation is a 1px rule; nothing hovers or lifts.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do draw every outage on the trigger ladder against the configured waiting periods.",
+      "Do put the page's one statement in the navy band and the evidence in ruled panels.",
+      "Do set relied-on terms as serif defined terms.",
+      "Do show undecided and no-data time explicitly.",
+      "Do use tabular lining numerals for comparable numbers.",
+      "Do stack wide tables below 720px and let the day strip fill the width below 640px.",
+      "Do pair every colour change with its dark-* twin."
+    ],
+    "donts": [
+      "Don't use amber outside attachment points and verification; the Example data banner is the sole exception.",
+      "Don't build big-number stat tiles or floating white cards.",
+      "Don't show undecided or no-data time in green.",
+      "Don't lift elements with blurred shadows or hover translation.",
+      "Don't round panels, buttons or inputs beyond 4px; full rounding is for state pills and the seal.",
+      "Don't put white text on amber."
+    ]
+  }
+}

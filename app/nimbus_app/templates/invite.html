@@ -1,10 +1,9 @@
 {% extends "base.html" %}{% block title %}Welcome · Nimbus Index{% endblock %}
+{% block band %}<section class="band band-slim"><div class="band-in"><div><h1>Welcome to the Nimbus Index pilot</h1><p class="lede">Set up your account for <b style="color:#fff">{{ inv.email }}</b>.</p></div></div></section>{% endblock %}
 {% block body %}
 <div class="narrow">
-  <h1>Welcome to the Nimbus Index pilot</h1>
-  <p class="lede">Set up your account for <b>{{ inv.email }}</b>.</p>
   {% if err %}<p class="alert err">{{ err }}</p>{% endif %}
-  <form class="stack panel" method="post" style="margin-top:16px">
+  <form class="stack panel panel-body" method="post">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <input type="email" name="username" value="{{ inv.email }}" autocomplete="username" hidden>
     <label>Your name<input type="text" id="name" name="name" value="{{ request.form.name or inv.name }}" required maxlength="120" autocomplete="name"></label>

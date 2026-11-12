@@ -279,3 +279,11 @@ def longdate(day):
 def monthname(day, with_year=False):
     y, mo = day.split("-")[:2]
     return f"{MONTHS[int(mo) - 1]} {y}" if with_year else MONTHS[int(mo) - 1][:3]
+
+
+COMPANIES = {"microsoft": "Microsoft", "cloudflare": "Cloudflare", "google": "Google", "aws": "AWS", "independent-vps": "Independent VPS"}
+
+
+@bp.app_template_filter("company")
+def company(op):
+    return COMPANIES.get(op, op)

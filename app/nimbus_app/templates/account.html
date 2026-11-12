@@ -1,12 +1,11 @@
 {% extends "base.html" %}{% block title %}Account · Nimbus Index{% endblock %}
+{% block band %}<section class="band band-slim"><div class="band-in"><div><h1>Your account</h1><p class="lede">{{ me.name }} · {{ me.email }}{% if me.company %} · {{ me.company }}{% endif %}</p></div></div></section>{% endblock %}
 {% block body %}
 <div class="narrow">
-  <h1>Your account</h1>
-  <p class="lede">{{ me.name }} · {{ me.email }}{% if me.company %} · {{ me.company }}{% endif %}</p>
   {% if msg %}<p class="alert ok">{{ msg }}</p>{% endif %}
   {% if err %}<p class="alert err">{{ err }}</p>{% endif %}
-  <form class="stack panel" method="post" style="margin-top:16px">
-    <h2 style="font-size:18px;margin:0">Change password</h2>
+  <form class="stack panel panel-body" method="post">
+    <h2>Change password</h2>
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <input type="email" name="username" value="{{ me.email }}" autocomplete="username" hidden>
     <label>Current password<input type="password" id="current" name="current" required autocomplete="current-password"></label>

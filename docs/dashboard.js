@@ -1,79 +1,109 @@
 // Shared by the public dashboard (docs/index.html) and the Nimbus Index app, which sets data-src on the script tag.
+// Renders: the title band (state, who judged), the services board, the trigger ladder, probe networks, and the
+// in-browser check of a signed record.
 (function () {
   const SRC = (document.currentScript && document.currentScript.dataset.src) || new URLSearchParams(location.search).get("src") ||
     "https://raw.githubusercontent.com/ateeqkhan11/outage-telemetry/data/status/latest.json";
   const $ = (id) => document.getElementById(id);
   const NAMES = { s3: ["S3", "GetObject"], dynamodb: ["DynamoDB", "GetItem"], lambda: ["Lambda", "Invoke"], ec2: ["EC2 API", "DescribeInstances"], sts: ["STS", "GetCallerIdentity"] };
-  const WORD = { up: "Up", down: "Outage", unknown: "Not decidable yet" };
+  const COMPANY = { microsoft: "Microsoft", cloudflare: "Cloudflare", google: "Google", aws: "AWS", "independent-vps": "Independent VPS" };
+  const WORD = { up: "Up", down: "Outage", unknown: "Undecided" };
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const ago = (iso) => { const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? "just now" : m < 90 ? `${m} min ago` : `${Math.round(m / 60)} h ago`; };
   const pill = (st, text) => `<span class="pill s-${st}">${esc(text || WORD[st])}</span>`;
+  const company = (op) => COMPANY[op] || op;
+  const listed = (a) => a.length > 2 ? a.slice(0, -1).join(", ") + " and " + a[a.length - 1] : a.join(" and ");
+  const dur = (m) => { const h = Math.floor(m / 60), r = m % 60; return h && r ? `${h} h ${r} min` : h ? `${h} h` : `${r} min`; };
+  const hm = (iso) => iso.slice(11, 16);
+  const day = (iso) => new Date(iso.slice(0, 10) + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const CHECK = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.4 5 8.8l4.6-5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const SEAL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 9.6 2.6l2.1-.2.6 2 1.8 1.1-.7 2 .7 2-1.8 1.1-.6 2-2.1-.2L8 14.8l-1.6-1.4-2.1.2-.6-2L1.9 10.5l.7-2-.7-2 1.8-1.1.6-2 2.1.2Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="m5.4 8.1 1.8 1.8 3.4-3.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  // the trigger ladder, also drawn server-side by the app's History and Reports pages (same markup and classes)
+  function ladder(outages, waits, emptyText) {
+    if (!outages.length) return `<p class="ladder-empty">${esc(emptyText)}</p>`;
+    const longest = Math.max(...outages.map((o) => o.duration_min), ...waits);
+    const scale = Math.ceil((longest * 1.08) / 60) * 60;
+    const pct = (m) => `${(100 * m / scale).toFixed(2)}%`;
+    const ticks = [];
+    for (let m = 0; m <= scale; m += 60) ticks.push(`<span style="left:${pct(m)}" class="${waits.includes(m) ? "att" : ""}">${m ? `${m / 60} h` : "0"}${waits.includes(m) ? "<em class=\"w\" style=\"font-style:normal\"> wait</em>" : ""}</span>`);
+    const rows = outages.slice().reverse().map((o, i) => {
+      const met = waits.map((w) => `<span class="met ${o.meets_waiting_period[w] ? "yes" : ""}">${o.meets_waiting_period[w] ? CHECK : ""}${w / 60} h ${o.meets_waiting_period[w] ? "met" : "not met"}</span>`).join("");
+      return `<div class="ladder-row"><div class="lr-when"><b>${day(o.start)}</b><span>${hm(o.start)}–${o.ongoing ? "ongoing" : hm(o.end)} UTC</span></div>
+        <div class="lr-track" role="img" aria-label="${dur(o.duration_min)}"><span class="lr-bar ${o.ongoing ? "ongoing" : ""}" style="--w:${pct(o.duration_min)};--i:${i}"></span>
+          ${waits.map((w) => `<span class="lr-att" style="left:${pct(w)}"></span>`).join("")}</div>
+        <div class="lr-dur">${dur(o.duration_min)}</div>
+        <div class="lr-meta">${esc(o.services.map((s) => (NAMES[s] || [s])[0]).join(", "))} ${met}</div></div>`;
+    }).join("");
+    return `<div class="ladder"><div class="ladder-scale" aria-hidden="true"><span>Outage</span><div class="ticks">${ticks.join("")}</div><span style="text-align:right">Length</span></div>${rows}</div>`;
+  }
+  window.NimbusLadder = ladder;
 
   function render(s) {
-    $("updated").textContent = `Updated ${ago(s.generated_at)} (${s.generated_at.replace("T", " ").slice(0, 16)} UTC) · last probe minute ${s.last_minute ? s.last_minute.replace("T", " ").replace("Z", " UTC") : "none"}`;
-    // what the probes see right now: failed calls in the last hour, all networks
+    const nets = Object.entries(s.networks);
+    const valid = nets.every(([, v]) => v.chain_valid);
+    $("updated").textContent = `Updated ${ago(s.generated_at)} · last probe minute ${s.last_minute ? s.last_minute.slice(11, 16) + " UTC" : "none"} · AWS us-east-1`;
     const lastHour = (v) => v.timeline.slice(-6).reduce((a, b) => [a[0] + b.failed, a[1] + b.checks], [0, 0]);
     const raw = Object.values(s.services).map(lastHour);
     const rawFailed = raw.reduce((a, r) => a + r[0], 0), rawChecks = raw.reduce((a, r) => a + r[1], 0);
-    const ov = $("overall");
+    const down = Object.entries(s.services).filter(([, v]) => v.state === "down").map(([k]) => (NAMES[k] || [k])[0]);
+    let title, st;
     if (s.can_decide) {
-      ov.className = `pill big s-${s.overall}`;
-      ov.textContent = s.overall === "up" ? "All services up" : s.overall === "down" ? "Outage detected" : "Waiting for data";
+      st = s.overall;
+      title = s.overall === "up" ? "All five services up" : s.overall === "down" ? `Outage: ${listed(down)}` : "Waiting for data";
     } else {
-      ov.className = `pill big s-${rawFailed ? "unknown" : "up"}`;
-      ov.textContent = rawChecks ? (rawFailed ? `${rawFailed} failed calls in the last hour` : "All checks passing") : "Waiting for data";
+      st = rawFailed ? "unknown" : "up";
+      title = rawChecks ? (rawFailed ? `${rawFailed} failed calls in the last hour` : "All checks passing") : "Waiting for data";
     }
+    $("state-title").textContent = title;
+    $("state-title").className = `state-title st-${st}`;
+    const ov = $("overall");
+    ov.className = `pill big s-${st}`;
+    ov.textContent = s.can_decide ? (st === "up" ? "Official: up" : st === "down" ? "Official: outage" : "Official: undecided") : "Not official yet";
 
-    const n = $("notice");
-    if (!s.can_decide) {
-      n.hidden = false;
-      n.innerHTML = `${pill("up", "Live")}<div><b>Measuring every minute; official outage calls start when the second independent network goes live</b>
-        An outage is only called when probes run by ${s.rules.operators_required} different companies see the same failure, so no single provider's glitch can trigger a payout.
-        Live and counted now: ${s.independent_operators.length} (${esc(s.independent_operators.join(", ") || "none")}). Second network by 13 November. Every call is already measured and signed below.</div>`;
-    } else {
-      n.hidden = false;
-      n.innerHTML = `${pill("up", "Official")}<div><b>${s.independent_operators.length} independent operators counted: ${esc(s.independent_operators.length > 2 ? s.independent_operators.slice(0, -1).join(", ") + " and " + s.independent_operators.slice(-1) : s.independent_operators.join(" and "))}</b>
-        A service is called down when probes run by ${s.rules.operators_required} different companies see it failing (${Math.round(s.rules.window_fail_share * 100)}% or more of calls over ${s.rules.window_minutes} minutes) while their own connection works. Every call is signed and can be checked below.</div>`;
-    }
+    const counted = nets.filter(([, v]) => v.counted), ref = nets.filter(([, v]) => !v.counted);
+    $("judges").innerHTML = `<ul>${counted.map(([n, v]) => `<li>${esc(company(v.operator))} <small>${esc(n)} probes</small></li>`).join("")}
+      ${ref.map(([n]) => `<li class="ref">AWS reference <small>${esc(n)}, shown, never counted</small></li>`).join("")}</ul>
+      <span class="seal ${valid ? "" : "bad"}">${SEAL}${valid ? `Signed · ${nets.length} chains valid` : "A chain failed its check"}</span>`;
+    $("judges-note").textContent = s.can_decide
+      ? `Down only when ${s.rules.operators_required} of these companies see it fail: ${Math.round(s.rules.window_fail_share * 100)}% of calls over ${s.rules.window_minutes} min.`
+      : `Official calls need ${s.rules.operators_required} independent companies; ${s.independent_operators.length} live now.`;
 
     $("services").innerHTML = Object.entries(s.services).map(([k, v]) => {
       const [name, op] = NAMES[k] || [k, ""];
       const okShare = v.checks ? (100 * (v.checks - v.failed) / v.checks) : null;
-      const lat = Object.entries(v.latency_ms_p50_last_hour).map(([net, ms]) => `${esc(net)} ${ms} ms`).join(" · ") || "—";
       const bars = v.timeline.map((b) => {
         if (!b.checks) return `<i class="none" title="${esc(b.t)}: no data"></i>`;
         const share = b.failed / b.checks;
         return share > 0 ? `<i class="bad" style="height:${Math.max(18, share * 100)}%" title="${esc(b.t)}: ${b.failed} of ${b.checks} calls failed"></i>`
-                         : `<i style="height:100%" title="${esc(b.t)}: all ${b.checks} calls OK"></i>`;
+                         : `<i title="${esc(b.t)}: all ${b.checks} calls OK"></i>`;
       }).join("");
       const [hf, hn] = lastHour(v);
       const badge = s.can_decide ? pill(v.state) : (hn ? (hf ? pill("unknown", `${hf} failed, last hour`) : pill("up", "Responding")) : pill("unknown", "No data"));
-      return `<article class="svc"><div class="svc-head"><div><h3>${name}</h3><small>${op}</small></div>${badge}</div>
-        <div class="tl" role="img" aria-label="${name}: failed calls over the last 24 hours">${bars}</div>
-        <div class="tl-axis"><span>24 h ago</span><span>now</span></div>
-        <dl class="kv"><dt>Calls OK, 24 h</dt><dd class="num">${okShare === null ? "—" : okShare.toFixed(okShare === 100 ? 0 : 2) + "%"} <span class="muted">of ${v.checks.toLocaleString()}</span></dd>
-          <dt>Official uptime</dt><dd class="num">${v.uptime_pct === null ? "from 2nd network" : v.uptime_pct.toFixed(3) + "%"}</dd>
-          <dt>Median latency, last hour</dt><dd class="num">${lat}</dd></dl>
-        ${v.last_error ? `<div class="err">Last error: ${esc(v.last_error)}</div>` : ""}</article>`;
+      const lat = Object.entries(v.latency_ms_p50_last_hour).map(([net, ms]) => `${esc(net)} <b class="num">${ms} ms</b>`).join(" · ") || "—";
+      return `<tr><td><span class="svc-name">${name}</span><span class="cell-sub">${op}</span></td><td>${badge}</td>
+        <td><div class="tl" role="img" aria-label="${name}: failed calls over the last 24 hours">${bars}</div><div class="tl-axis"><span>24 h ago</span><span>now</span></div>
+          ${v.last_error ? `<div class="err">Last error: ${esc(v.last_error)}</div>` : ""}</td>
+        <td class="num"><b>${okShare === null ? "—" : okShare.toFixed(okShare === 100 ? 0 : 2) + "%"}</b><span class="cell-sub">of ${v.checks.toLocaleString()} calls</span>
+          <span class="cell-sub">${v.uptime_pct === null ? "official from 2nd company" : `official ${v.uptime_pct.toFixed(3)}%`}</span></td>
+        <td><div class="lat">${lat}</div></td></tr>`;
     }).join("");
 
-    $("outages").innerHTML = s.outages.length
-      ? `<div class="tablewrap"><table><tr><th>Start</th><th>End</th><th>Length</th><th>Services</th>${s.rules.waiting_periods_min.map((w) => `<th>${w / 60} h wait met</th>`).join("")}</tr>
-         ${s.outages.map((o) => `<tr><td class="num">${esc(o.start)}</td><td class="num">${o.ongoing ? "ongoing" : esc(o.end)}</td><td class="num">${o.duration_min} min</td><td>${esc(o.services.join(", "))}</td>
-           ${s.rules.waiting_periods_min.map((w) => `<td>${o.meets_waiting_period[w] ? '<span class="bad">Yes</span>' : "No"}</td>`).join("")}</tr>`).join("")}</table></div>`
-      : `<p style="margin:0">${s.can_decide ? "None. No service failed for two independent operators at once." : "None can be called yet: this needs a second independent operator. Raw failures, if any, show as red bars above."}</p>`;
+    $("outages").innerHTML = ladder(s.outages, s.rules.waiting_periods_min,
+      s.can_decide ? "No outage called in the last 24 hours: no service failed for two independent companies at once."
+                   : "None can be called yet: this needs a second independent company. Raw failures show as red bars above.");
 
-    const rows = Object.entries(s.networks).map(([net, v]) => `<tr><td><b>${esc(net)}</b><br><span class="muted" style="font-size:12.5px">${esc(v.host || "")}</span></td>
-      <td>${esc(v.operator)}</td><td>${v.counted ? "Yes" : "No"}</td><td class="num">${v.last_minute ? ago(v.last_minute) : "—"}</td>
-      <td class="num">${(100 * v.minutes_covered / v.minutes_in_window).toFixed(1)}%</td><td class="num">${v.longest_gap_min} min</td>
-      <td>${v.chain_valid ? '<span class="ok">Valid</span>' : `<span class="bad">Invalid</span> <span class="err">${esc(v.problems[0] || "")}</span>`}</td></tr>`).join("");
-    $("networks").insertAdjacentHTML("beforeend", rows);
+    $("networks").innerHTML = nets.map(([net, v]) => `<tr><td><b>${esc(net)}</b><span class="cell-sub">${esc(v.host || "")}</span></td>
+      <td data-label="Company">${esc(v.counted ? company(v.operator) : "AWS (reference)")}</td><td data-label="Counted">${v.counted ? "Yes" : "No, inside AWS"}</td><td class="num" data-label="Last result">${v.last_minute ? ago(v.last_minute) : "—"}</td>
+      <td class="num" data-label="Coverage, 24 h">${(100 * v.minutes_covered / v.minutes_in_window).toFixed(1)}%</td><td class="num" data-label="Longest gap">${v.longest_gap_min} min</td>
+      <td data-label="Signatures">${v.chain_valid ? '<span class="ok">Valid</span>' : `<span class="bad">Invalid</span> <span class="err">${esc(v.problems[0] || "")}</span>`}</td></tr>`).join("");
 
     const net = Object.keys(s.sample_records).find((k) => s.networks[k] && s.networks[k].counted) || Object.keys(s.sample_records)[0];
     if (net) {
       const rec = s.sample_records[net][s.sample_records[net].length - 1];
       $("record").textContent = JSON.stringify(rec, null, 1);
       $("pubkey").textContent = `${net}: ${s.public_keys[net] || "missing"}`;
+      $("record-from").textContent = `${company(s.networks[net].operator)} · ${net} · record ${rec.seq}`;
       const btn = $("verify-btn");
       btn.disabled = false;
       btn.onclick = () => verifyRecord(rec, s.public_keys[net], net);
@@ -91,22 +121,23 @@
   async function verifyRecord(rec, pubB64, net) {
     const out = $("verify-steps");
     out.hidden = false;
-    const step = (ok, text) => `<li><span class="${ok ? "pass" : "fail"}">${ok ? "Pass" : "Fail"}</span> ${text}</li>`;
+    const step = (ok, text) => `<li><span class="${ok ? "pass" : "fail"}">${ok ? "Pass" : "Fail"}</span><span>${text}</span></li>`;
     let html = "";
     try {
       const digest = hex(await crypto.subtle.digest("SHA-256", canonical(rec)));
-      html += step(digest === rec.hash, `SHA-256 of the record's content is <span class="num">${digest.slice(0, 16)}…</span>, ${digest === rec.hash ? "matching" : "NOT matching"} its <span class="num">hash</span> field.`);
+      html += step(digest === rec.hash, `SHA-256 of the record's content is <span class="mono">${digest.slice(0, 16)}…</span>, ${digest === rec.hash ? "matching" : "NOT matching"} its <span class="mono">hash</span> field.`);
       const key = await crypto.subtle.importKey("raw", fromB64(pubB64), { name: "Ed25519" }, false, ["verify"]);
       const ok = await crypto.subtle.verify({ name: "Ed25519" }, key, fromB64(rec.sig), fromHex(rec.hash));
       html += step(ok, `Ed25519 signature ${ok ? "is valid" : "is NOT valid"} for the <b>${esc(net)}</b> network's public key.`);
-      html += `<li class="muted">Record ${rec.seq} links to the one before it through <span class="num">prev = ${esc(rec.prev.slice(0, 16))}…</span>; the full chain is checked on every update (see Signatures above).</li>`;
+      html += `<li class="muted">Record ${rec.seq} links to the one before it through <span class="mono">prev = ${esc(rec.prev.slice(0, 16))}…</span>; every chain is checked in full on each update (Signatures, below).</li>`;
     } catch (e) {
-      html += step(false, `Your browser couldn't run the check (${esc(e.message)}). Ed25519 needs a recent Chrome, Edge, Firefox or Safari; or run <span class="num">python -m probe.verify</span> from the repo.`);
+      html += step(false, `Your browser couldn't run the check (${esc(e.message)}). Ed25519 needs a recent Chrome, Edge, Firefox or Safari; or run <span class="mono">python -m probe.verify</span> from the repo.`);
     }
     out.innerHTML = html;
   }
 
+  if (!$("state-title")) return;                       // pages that only borrow the ladder
   fetch(SRC, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then(render)
-    .catch((e) => { $("updated").textContent = `Couldn't load the latest results (${e.message}). The raw data is on the data branch.`; $("overall").textContent = "Unavailable"; });
+    .catch((e) => { $("updated").textContent = `Couldn't load the latest results (${e.message}). The raw data is on the data branch.`; $("overall").textContent = "Unavailable"; $("state-title").textContent = "Status unavailable"; });
 })();

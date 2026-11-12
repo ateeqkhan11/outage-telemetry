@@ -1,31 +1,29 @@
 {% extends "base.html" %}{% block title %}Admin · Nimbus Index{% endblock %}
+{% block band %}<section class="band band-slim"><div class="band-in"><div><h1>Admin</h1>
+  <p class="lede">Who asked for access, who is in, and what they use. Invite links are shown once; send them yourself by email.</p></div></div></section>{% endblock %}
 {% block body %}
-<section>
-  <h1>Admin</h1>
-  <p class="lede">Who asked for access, who is in, and what they use. Invite links are shown once; send them yourself by email.</p>
-</section>
 {% if new_invite %}
-<div class="panel" style="border-color:var(--accent)">
-  <h2 style="font-size:18px">Invite link for {{ new_invite.email }}</h2>
+<div class="panel panel-body reveal">
+  <h2>Invite link for {{ new_invite.email }}</h2>
   <p style="margin:4px 0 10px">Valid for 7 days, single use. Copy it into your email now; it won't be shown again.</p>
   <div class="key">{{ new_invite.link }}</div>
 </div>
 {% endif %}
-<section>
-  <h2>Access requests</h2>
+<section class="panel">
+  <div class="panel-head"><h2>Access requests</h2></div>
   {% if requests %}
   <div class="tablewrap"><table><tr><th>Received</th><th>Person</th><th>Company</th><th>Use</th><th>Status</th><th></th></tr>
-  {% for r in requests %}<tr><td class="num">{{ r.created_at | when }}</td><td><b>{{ r.name }}</b><br><span class="muted">{{ r.email }}{% if r.title %} · {{ r.title }}{% endif %}</span></td>
-    <td>{{ r.company }}</td><td style="max-width:320px">{{ r.use_case }}</td><td><span class="tag {{ 'new' if r.status == 'new' else '' }}">{{ r.status }}</span></td>
+  {% for r in requests %}<tr><td class="tnum nowrap">{{ r.created_at | when }}</td><td><b>{{ r.name }}</b><br><span class="muted">{{ r.email }}{% if r.title %} · {{ r.title }}{% endif %}</span></td>
+    <td>{{ r.company }}</td><td style="max-width:320px;min-width:200px">{{ r.use_case }}</td><td><span class="tag {{ 'new' if r.status == 'new' else '' }}">{{ r.status }}</span></td>
     <td>{% if r.status == 'new' %}<div class="row">
       <form method="post" action="{{ url_for('admin.invite') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="request_id" value="{{ r.id }}"><button type="submit">Invite</button></form>
       <form method="post" action="{{ url_for('admin.decline', req_id=r.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="danger" type="submit">Decline</button></form></div>{% endif %}</td></tr>{% endfor %}
   </table></div>
-  {% else %}<p style="margin:0">No requests yet. Share {{ request.host_url }}request-access with interested firms.</p>{% endif %}
+  {% else %}<p class="panel-body" style="margin:0">No requests yet. Share {{ request.host_url }}request-access with interested firms.</p>{% endif %}
 </section>
-<section>
-  <h2>Invite someone directly</h2>
-  <form class="panel filters" method="post" action="{{ url_for('admin.invite') }}">
+<section class="panel">
+  <div class="panel-head"><h2>Invite someone directly</h2></div>
+  <form class="panel-body filters" method="post" action="{{ url_for('admin.invite') }}">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <label>Email<input type="email" id="inv-email" name="email" required></label>
     <label>Name<input type="text" id="inv-name" name="name"></label>
@@ -33,22 +31,22 @@
     <label>Role<select id="inv-role" name="role"><option value="member">Pilot member</option><option value="admin">Admin (Nimbus Index team)</option></select></label>
     <div><button type="submit">Create invite link</button></div>
   </form>
-  {% if invites %}<p class="muted" style="margin:10px 0 0">Open invites: {% for i in invites %}{{ i.email }} (until {{ i.expires_at[:10] }}){% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+  {% if invites %}<p class="panel-foot" style="margin:0">Open invites: {% for i in invites %}{{ i.email }} (until {{ i.expires_at[:10] }}){% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
 </section>
-<section>
-  <h2>People</h2>
+<section class="panel">
+  <div class="panel-head"><h2>People</h2></div>
   <div class="tablewrap"><table><tr><th>Person</th><th>Company</th><th>Role</th><th>Last active</th><th class="num">Sign-ins, 30 d</th><th class="num">Reports and downloads, 30 d</th><th class="num">API calls, 7 d</th><th class="num">Keys</th><th></th></tr>
-  {% for p in people %}<tr><td><b>{{ p.name }}</b><br><span class="muted">{{ p.email }}</span></td><td>{{ p.company }}</td><td>{{ p.role }}</td><td class="num">{{ p.last_active | when }}</td>
+  {% for p in people %}<tr><td><b>{{ p.name }}</b><br><span class="muted">{{ p.email }}</span></td><td>{{ p.company }}</td><td>{{ p.role }}</td><td class="tnum nowrap">{{ p.last_active | when }}</td>
     <td class="num">{{ p.sign_ins_30d }}</td><td class="num">{{ p.reports_30d }}</td><td class="num">{{ p.api_7d }}</td><td class="num">{{ p.key_count }}</td>
     <td>{% if p.id != me.id %}<form method="post" action="{{ url_for('admin.set_active', user_id=p.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}">
       {% if p.active %}<input type="hidden" name="active" value="0"><button class="danger" type="submit">Switch off</button>{% else %}<input type="hidden" name="active" value="1"><button class="secondary" type="submit">Switch on</button>{% endif %}</form>{% endif %}</td></tr>{% endfor %}
   </table></div>
 </section>
-<section>
-  <h2>Recent activity</h2>
+<section class="panel">
+  <div class="panel-head"><h2>Recent activity</h2></div>
   <div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr>
-  {% for a in recent %}<tr><td class="num">{{ a.at | when }}</td><td>{{ a.name or "—" }}{% if a.company %} <span class="muted">· {{ a.company }}</span>{% endif %}</td><td>{{ a.kind | replace("_", " ") }}</td><td class="muted">{{ a.detail }}</td></tr>{% endfor %}
+  {% for a in recent %}<tr><td class="tnum nowrap">{{ a.at | when }}</td><td>{{ a.name or "—" }}{% if a.company %} <span class="muted">· {{ a.company }}</span>{% endif %}</td><td>{{ a.kind | replace("_", " ") }}</td><td class="muted">{{ a.detail }}</td></tr>{% endfor %}
   </table></div>
-  <p class="muted" style="font-size:13px">API calls are counted per person above rather than listed here.</p>
+  <p class="panel-foot" style="margin:0">API calls are counted per person above rather than listed here.</p>
 </section>
 {% endblock %}

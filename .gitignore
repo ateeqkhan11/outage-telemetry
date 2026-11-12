@@ -9,3 +9,7 @@ workers/.wrangler/
 .DS_Store
 workers/.dev.vars
 app/instance/
+.impeccable/review/
+.impeccable/decision/
+.impeccable/build/
+.impeccable/questions/

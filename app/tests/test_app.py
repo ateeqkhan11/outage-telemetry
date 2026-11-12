@@ -126,7 +126,7 @@ def test_pages_need_sign_in_and_invites_work(env):
     assert c.get(f"/invite/{tok}").status_code == 410          # single use
     assert c.get("/admin/").status_code == 403                 # members aren't admins
     r = c.get("/reports?from=2026-11-10&to=2026-11-10")
-    assert r.status_code == 200 and "Outages under the trigger rules" in r.get_data(as_text=True)
+    assert r.status_code == 200 and "Trigger ladder" in r.get_data(as_text=True)
     csv_ = c.get("/reports.csv?from=2026-11-10&to=2026-11-10").get_data(as_text=True)
     assert csv_.splitlines()[0].startswith("date,service,official_uptime_pct")
     body = c.get(f"/records/cloudflare/{DAY}.jsonl").get_data(as_text=True).splitlines()
@@ -253,7 +253,7 @@ def test_history_page(env):
     invite_and_join(app, c)
     r = c.get("/history?from=2026-11-01&to=2026-11-10")
     html = r.get_data(as_text=True)
-    assert r.status_code == 200 and "Outages under the trigger rules" in html and "min</td>" in html
+    assert r.status_code == 200 and "Trigger ladder" in html and "1 h not met" in html
     assert "Example data" not in html
     page = c.get("/api-access").get_data(as_text=True)
     page = c.post("/api-access", data={"csrf": csrf_of(page), "action": "create", "name": "h"}).get_data(as_text=True)

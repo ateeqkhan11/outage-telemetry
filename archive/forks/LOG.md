@@ -256471,3 +256471,5 @@ A probe started twice in one minute; both copies signed records from the same ch
 - 2026-11-17T01:40Z moved aws/2026-11-17/0138.jsonl: 36 records, seq 452845-452880, at 2026-11-17T01:38:17.115Z
 - 2026-11-17T01:48Z moved aws/2026-11-16/1932.jsonl: 36 records, seq 439705-439740, at 2026-11-16T19:32:11.095Z
 - 2026-11-17T01:48Z moved aws/2026-11-16/2251.jsonl: 36 records, seq 446869-446904, at 2026-11-16T22:51:59.851Z
+- 2026-11-17T01:56Z moved aws/2026-11-16/1932.jsonl: 36 records, seq 439705-439740, at 2026-11-16T19:32:11.095Z
+- 2026-11-17T01:56Z moved aws/2026-11-16/2251.jsonl: 36 records, seq 446869-446904, at 2026-11-16T22:51:59.851Z

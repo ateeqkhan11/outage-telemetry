@@ -7,7 +7,7 @@
   const $ = (id) => document.getElementById(id);
   const NAMES = { s3: ["S3", "GetObject"], dynamodb: ["DynamoDB", "GetItem"], lambda: ["Lambda", "Invoke"], ec2: ["EC2 API", "DescribeInstances"], sts: ["STS", "GetCallerIdentity"] };
   const COMPANY = { microsoft: "Microsoft", cloudflare: "Cloudflare", google: "Google", aws: "AWS", "independent-vps": "Independent VPS" };
-  const WORD = { up: "Up", down: "Outage", unknown: "Undecided" };
+  const WORD = { up: "Up", down: "Outage", unknown: "Not enough data" };
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const ago = (iso) => { const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? "just now" : m < 90 ? `${m} min ago` : `${Math.round(m / 60)} h ago`; };
   const pill = (st, text) => `<span class="pill s-${st}">${esc(text || WORD[st])}</span>`;
@@ -52,14 +52,14 @@
       st = s.overall;
       title = s.overall === "up" ? "All five services up" : s.overall === "down" ? `Outage: ${listed(down)}` : "Waiting for data";
     } else {
-      st = rawFailed ? "unknown" : "up";
-      title = rawChecks ? (rawFailed ? `${rawFailed} failed calls in the last hour` : "All checks passing") : "Waiting for data";
+      st = "unknown";   // fix 2: without enough coverage nothing is called up or down
+      title = "Not enough data to call";
     }
     $("state-title").textContent = title;
     $("state-title").className = `state-title st-${st}`;
     const ov = $("overall");
     ov.className = `pill big s-${st}`;
-    ov.textContent = s.can_decide ? (st === "up" ? "Official: up" : st === "down" ? "Official: outage" : "Official: undecided") : "Not official yet";
+    ov.textContent = s.can_decide ? (st === "up" ? "Official: up" : st === "down" ? "Official: outage" : "Official: not enough data") : "Not enough data";
 
     const counted = nets.filter(([, v]) => v.counted), ref = nets.filter(([, v]) => !v.counted);
     $("judges").innerHTML = `<ul>${counted.map(([n, v]) => `<li>${esc(company(v.operator))} <small>${esc(n)} probes</small></li>`).join("")}
@@ -68,7 +68,7 @@
     const shared = (s.shared_target_accounts || []).length;
     $("judges-note").textContent = shared ? `Warning: two counted networks call the same test account (${s.shared_target_accounts.join(", ")}).` : s.can_decide
       ? `Down only when ${s.rules.operators_required} of these companies see it fail: ${Math.round(s.rules.window_fail_share * 100)}% of calls over ${s.rules.window_minutes} min.`
-      : `Official calls need ${s.rules.operators_required} independent companies; ${s.independent_operators.length} live now.`;
+      : ((s.readiness && s.readiness.reason) || `Official calls need ${s.rules.operators_required} independent companies; ${s.independent_operators.length} live now.`);
 
     $("services").innerHTML = Object.entries(s.services).map(([k, v]) => {
       const [name, op] = NAMES[k] || [k, ""];
@@ -80,7 +80,7 @@
                          : `<i title="${esc(b.t)}: all ${b.checks} calls OK"></i>`;
       }).join("");
       const [hf, hn] = lastHour(v);
-      const badge = s.can_decide ? pill(v.state) : (hn ? (hf ? pill("unknown", `${hf} failed, last hour`) : pill("up", "Responding")) : pill("unknown", "No data"));
+      const badge = s.can_decide ? pill(v.state) : pill("unknown", hn ? (hf ? `Not enough data · ${hf} failed, last hour` : "Not enough data · responding") : "No data");
       const lat = Object.entries(v.latency_ms_p50_last_hour).map(([net, ms]) => `${esc(net)} <b class="num">${ms} ms</b>`).join(" · ") || "—";
       return `<tr><td><span class="svc-name">${name}</span><span class="cell-sub">${op}</span></td><td>${badge}</td>
         <td><div class="tl" role="img" aria-label="${name}: failed calls over the last 24 hours">${bars}</div><div class="tl-axis"><span>24 h ago</span><span>now</span></div>
@@ -92,11 +92,11 @@
 
     $("outages").innerHTML = ladder(s.outages, s.rules.waiting_periods_min,
       s.can_decide ? "No outage called in the last 24 hours: no service failed for two independent companies at once."
-                   : "None can be called yet: this needs a second independent company. Raw failures show as red bars above.");
+                   : `None can be called yet. ${(s.readiness && s.readiness.reason) || "This needs a second independent company."} Raw failures show as red bars above.`);
 
     $("networks").innerHTML = nets.map(([net, v]) => `<tr><td><b>${esc(net)}</b><span class="cell-sub">${esc(v.host || "")}</span></td>
       <td data-label="Company">${esc(v.counted ? company(v.operator) : "AWS (reference)")}</td><td data-label="Counted">${v.counted ? "Yes" : "No, inside AWS"}</td><td data-label="Test account">${v.account ? esc(v.account) : '<span class="muted">shared (original)</span>'}</td><td class="num" data-label="Last result">${v.last_minute ? ago(v.last_minute) : "—"}</td>
-      <td class="num" data-label="Coverage, 24 h">${(100 * v.minutes_covered / v.minutes_in_window).toFixed(1)}%</td><td class="num" data-label="Longest gap">${v.longest_gap_min} min</td>
+      <td class="num" data-label="Coverage, 24 h">${(100 * v.minutes_covered / v.minutes_in_window).toFixed(1)}%${v.counted && 100 * v.minutes_covered / v.minutes_in_window < 95 ? ' <span class="cell-sub">below 95%</span>' : ""}</td><td class="num" data-label="Longest gap">${v.longest_gap_min} min</td>
       <td data-label="Signatures">${v.chain_valid ? '<span class="ok">Valid</span>' : `<span class="bad">Invalid</span> <span class="err">${esc(v.problems[0] || "")}</span>`}</td></tr>`).join("");
 
     const net = Object.keys(s.sample_records).find((k) => s.networks[k] && s.networks[k].counted) || Object.keys(s.sample_records)[0];

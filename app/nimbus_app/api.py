@@ -37,15 +37,18 @@ def status():
     s = data.status()
     if s is None:
         return jsonify(error="No data yet."), 503
+    decide = s["can_decide"]          # without enough coverage nothing is called up or down (fix 2)
     return jsonify({
         "generated_at": s["generated_at"], "region": s["region"], "last_minute": s["last_minute"],
-        "can_decide": s["can_decide"], "overall": s["overall"], "independent_operators": s["independent_operators"],
+        "can_decide": decide, "overall": s["overall"] if decide else "unknown",
+        "readiness": s.get("readiness"), "independent_operators": s["independent_operators"],
         "rules": _rules(),
-        "services": {k: {"state": v["state"], "uptime_pct_24h": v["uptime_pct"], "checks_24h": v["checks"],
+        "services": {k: {"state": v["state"] if decide else "unknown", "uptime_pct_24h": v["uptime_pct"], "checks_24h": v["checks"],
                          "failed_24h": v["failed"], "latency_ms_p50_last_hour": v["latency_ms_p50_last_hour"]}
                      for k, v in s["services"].items()},
-        "networks": {k: {f: v[f] for f in ("operator", "counted", "last_minute", "minutes_covered", "longest_gap_min",
-                                            "records", "chain_valid")} for k, v in s["networks"].items()},
+        "networks": {k: {f: v.get(f) for f in ("operator", "counted", "last_minute", "age_min", "minutes_covered",
+                                                "coverage_pct", "longest_gap_min", "records", "chain_valid")}
+                     for k, v in s["networks"].items()},
         "outages_24h": s["outages"],
     })
 

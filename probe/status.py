@@ -5,7 +5,9 @@
 Covers the last 24 hours of every probe network found in the store:
   - per service: current state, uptime, latency per network, and a 10-minute timeline of failed checks
   - outage events under the trigger rules (counting independent operators only)
-  - per network: operator, last result, minutes covered, longest gap, and whether its signed chain verifies
+  - per network: operator, last result and its age, coverage, longest gap, and whether its signed chain verifies
+  - whether an official call can be made at all (fix 2): at least `operators_required` independent companies must each
+    have covered 95%+ of the last 24 h and reported within the last 15 minutes; otherwise the state is "not enough data"
   - a few of the latest signed records, so anyone can check one by hand with the public key
 """
 from __future__ import annotations
@@ -24,6 +26,39 @@ from .store import open_store, read_jsonl
 
 FMT = "%Y-%m-%dT%H:%MZ"
 BUCKET_MIN = 10
+COVERAGE_DEFAULT = {"window_hours": 24, "min_share": 0.95, "max_age_min": 15}
+
+
+def readiness(minutes_by_operator: dict, now: datetime, cfg: dict) -> dict:
+    """Can an official call be made? Each counted company needs enough recent coverage; missing data is never 'up'."""
+    rule = {**COVERAGE_DEFAULT, **cfg.get("coverage_rule", {})}
+    need = cfg["operators_required"]
+    since = (now - timedelta(hours=rule["window_hours"])).replace(tzinfo=None)
+    window = rule["window_hours"] * 60
+    ops, short = {}, []
+    for op, minutes in sorted(minutes_by_operator.items()):
+        recent = {m for m in minutes if datetime.strptime(m, FMT) >= since}
+        share = len(recent) / window
+        last = max(minutes) if minutes else None
+        age = int((now.replace(tzinfo=None) - datetime.strptime(last, FMT)).total_seconds() // 60) if last else None
+        ok = share >= rule["min_share"] and age is not None and age <= rule["max_age_min"]
+        ops[op] = {"coverage_pct": round(100 * share, 1), "age_min": age, "meets_rule": ok}
+        if not ok:
+            short.append(f"{op} {100 * share:.1f}% of the last {rule['window_hours']} h"
+                         + (f", last report {age} min ago" if age is not None and age > rule["max_age_min"] else ""))
+    meeting = sum(1 for v in ops.values() if v["meets_rule"])
+    ok = meeting >= need
+    if ok:
+        reason = None
+    elif len(ops) < need:
+        reason = f"Not enough data: {len(ops)} of the {need} independent companies needed are reporting."
+    else:
+        reason = (f"Not enough data: {meeting} of the {need} companies needed have "
+                  f"{int(rule['min_share'] * 100)}%+ coverage of the last {rule['window_hours']} h ("
+                  + "; ".join(short) + ").")
+    return {"ok": ok, "reason": reason, "operators": ops,
+            "rule": f"{need} independent companies, each with {int(rule['min_share'] * 100)}%+ coverage of the last "
+                    f"{rule['window_hours']} h and a report in the last {rule['max_age_min']} min"}
 
 
 def load_window(store, hours: int, now: datetime) -> List[dict]:
@@ -64,6 +99,8 @@ def build(store, keys_dir: str, cfg: dict, hours: int = 24, now: Optional[dateti
             "operator": "reference (inside AWS, not counted)" if net in reference else cfg["operators"].get(net, net),
             "counted": net not in reference,
             "last_minute": minutes[-1] if minutes else None,
+            "age_min": int((now.replace(tzinfo=None) - datetime.strptime(minutes[-1], FMT)).total_seconds() // 60) if minutes else None,
+            "coverage_pct": round(100 * len(minutes) / (hours * 60), 1),
             "minutes_covered": len(minutes), "minutes_in_window": hours * 60,
             "longest_gap_min": max(gaps, default=0), "records": len(rs),
             "chain_valid": not problems,
@@ -77,6 +114,10 @@ def build(store, keys_dir: str, cfg: dict, hours: int = 24, now: Optional[dateti
     states = minute_states(counted, cfg)
     last_min = max(states) if states else None
     operators = sorted({cfg["operators"].get(n, n) for n in nets if n not in reference})
+    by_op = defaultdict(set)
+    for r in counted:
+        by_op[cfg["operators"].get(r["network"], r["network"])].add(r["minute"])
+    ready = readiness(by_op, now, cfg)
 
     svc_out = {}
     for svc in services:
@@ -124,11 +165,13 @@ def build(store, keys_dir: str, cfg: dict, hours: int = 24, now: Optional[dateti
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "window_hours": hours, "region": cfg["region"],
         "rules": {"version": cfg["version"], "operators_required": cfg["operators_required"],
                   "window_minutes": cfg.get("window_minutes", 1), "window_fail_share": cfg.get("window_fail_share", 1.0),
-                  "waiting_periods_min": cfg["waiting_periods_min"]},
+                  "waiting_periods_min": cfg["waiting_periods_min"],
+                  "coverage_rule": {**COVERAGE_DEFAULT, **{k: v for k, v in cfg.get("coverage_rule", {}).items() if k != "note"}}},
         "independent_operators": operators,
         "shared_target_accounts": sorted({a for a in [networks[n].get("account") for n in nets if n not in reference]
                                           if a and [networks[m].get("account") for m in nets if m not in reference].count(a) > 1}),
-        "can_decide": len(operators) >= cfg["operators_required"],
+        "can_decide": len(operators) >= cfg["operators_required"] and ready["ok"],
+        "readiness": ready,
         "overall": ("down" if last_min and any(states[last_min][s] == "down" for s in services)
                     else ("up" if last_min and all(states[last_min][s] == "up" for s in services) else "unknown")),
         "last_minute": last_min,

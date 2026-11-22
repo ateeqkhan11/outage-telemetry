@@ -55,5 +55,11 @@
       "description": "At least 2 independent companies each see 90% or more of their calls to a service fail over the last 3 minutes: no usable service."
     }
   },
-  "default_definition": "degraded"
+  "default_definition": "degraded",
+  "coverage_rule": {
+    "window_hours": 24,
+    "min_share": 0.95,
+    "max_age_min": 15,
+    "note": "An official call needs operators_required independent companies, each covering this share of the window and reporting within max_age_min. Otherwise every state is 'unknown' (not enough data), never 'up'."
+  }
 }

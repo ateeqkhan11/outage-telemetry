@@ -49,6 +49,7 @@ getnimbusindex.com|MX|1 smtp.google.com.
 getnimbusindex.com|TXT|"v=spf1 include:_spf.google.com ~all"|"google-site-verification=7zHfZtniEFoREFbYz1qI23ECinTMzjNIgpBaxoGiB-g"
 www.getnimbusindex.com|CNAME|getnimbusindex.com
 _dmarc.getnimbusindex.com|TXT|"v=DMARC1; p=none; rua=mailto:michael@getnimbusindex.com"
+dc-bdaca08905._spfm.getnimbusindex.com|TXT|"v=spf1 include:_spf.google.com ~all"
 google._domainkey.getnimbusindex.com|TXT|"v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4oXOfXWrjTzhV3pXbqjXCuqpfMAWs+8fEFF5U+3QDw6JmWQf8Pnm0rgCvCzarbTYljf6wxRGnCm6ww4pW5BFdwUBKKhVHEpgMs+tCpug6aDrPIfAB0C8+wBrSej9Gg2eWXssOvxwfhF03uaOehIxUeNnKGSsIlw5oMCrwk81YgINhEnQS3HCz3Jx1fZLGUmswnq" "e22X63YwvD0L0eaejrgM9ZqYBnhgo1A0CtwZPh5MKUlZIR/elkg7/ZivgJ3BP/vD9gSo6YhKsQYW6AamKI0SpoXNG4JETuMMa6McDic0m4h+tFOu1WItIL/2OVOidS1NEx99HatICc+3MFK5ldQIDAQAB"
 EOF
       if [ -n "$IP" ]; then echo "getnimbusindex.com|A|$IP"            # our server redirects it to nimbusindex.com

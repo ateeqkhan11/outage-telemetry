@@ -70,6 +70,7 @@ def build(store, keys_dir: str, cfg: dict, hours: int = 24, now: Optional[dateti
             "problems": problems[:5],
             "host": rs[-1].get("host") if rs else None,
             "account": rs[-1].get("account") if rs else None,
+            "started_by": rs[-1].get("started_by") if rs else None,
         }
 
     counted = [r for r in recs if r["network"] not in reference]

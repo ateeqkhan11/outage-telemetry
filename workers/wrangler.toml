@@ -1,5 +1,5 @@
 # Cloudflare Workers probe network. Deploy: npm install && npx wrangler deploy
-# Secrets: npx wrangler secret put AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / PROBE_SIGNING_KEY
+# Secrets: npx wrangler secret put AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / PROBE_SIGNING_KEY / GITHUB_DISPATCH_TOKEN
 name = "outage-probe"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
@@ -19,4 +19,5 @@ PROBE_TABLE = "outage-probe"
 PROBE_TABLE_KEY = '{"pk":{"S":"probe"}}'
 PROBE_FUNCTION = "outage-probe-hello"
 CONTROL_URL = "https://www.google.com/generate_204"
+DISPATCH_REPO = "ateeqkhan11/outage-telemetry"   # starts the GitHub probe every 5 min (needs secret GITHUB_DISPATCH_TOKEN)
 PROBE_ROUNDS = "6"           # checks per service per minute (every 10 seconds)

@@ -58,3 +58,14 @@ def test_daily_file_verifies_and_reports_gaps(tmp_path):
     assert s["chain_valid"] and s["records"] == 10 and s["minutes_covered"] == 5
     assert s["longest_gap_min"] > 0 and len(s["sha256"]) == 64
     assert store.get("daily/2026-11-03/local.jsonl") and store.get("daily/2026-11-03/manifest.json")
+
+
+def test_records_say_what_started_the_run(tmp_path, monkeypatch):
+    monkeypatch.setenv("PROBE_STARTED_BY", "cloudflare-croné\n")      # user-supplied input: cleaned to ASCII
+    store = LocalStore(tmp_path)
+    clock, sleep = fake_clock(1793714700.0)
+    run_minutes("local", 1, store, KEY, [("s3", "GetObject", ok)], ("control", "HTTPS GET", ok), wait=True,
+                clock=clock, sleep=sleep)
+    recs = [r for k in store.list("runs/local/") for r in read_jsonl(store.get(k))]
+    assert recs and all(r["started_by"] == "cloudflare-cron" for r in recs)
+    assert verify(recs, load_public(public_b64(KEY))) == []

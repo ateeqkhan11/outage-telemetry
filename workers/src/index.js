@@ -1,7 +1,12 @@
 // Cloudflare Worker probe: every minute (cron), run the control check and the 5 AWS us-east-1 checks, seal the
 // results onto the "cloudflare" chain and save them in D1 (see below).
-// Secrets (wrangler secret put ...): AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, PROBE_SIGNING_KEY.
-// Vars (wrangler.toml): PROBE_BUCKET, PROBE_OBJECT_KEY, PROBE_TABLE, PROBE_TABLE_KEY, PROBE_FUNCTION, CONTROL_URL.
+// Secrets (wrangler secret put ...): AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, PROBE_SIGNING_KEY,
+//   GITHUB_DISPATCH_TOKEN (optional: fine-grained token allowed only "Actions: read and write" on DISPATCH_REPO).
+// Vars (wrangler.toml): PROBE_BUCKET, PROBE_OBJECT_KEY, PROBE_TABLE, PROBE_TABLE_KEY, PROBE_FUNCTION, CONTROL_URL,
+//   DISPATCH_REPO, TARGET_ACCOUNT.
+//
+// The same timer also starts the GitHub probe network every 5 minutes (minutes 3, 8, 13, ...). That scheduler must not
+// live inside AWS (an AWS outage would silence a counted network), and GitHub's own schedule is unreliable.
 import { AwsClient } from "aws4fetch";
 import { GENESIS, loadPrivate, seal } from "./chain.js";
 
@@ -71,7 +76,8 @@ export async function probeOnce(env, now = new Date()) {
   const results = await Promise.all(list.map(([, , fn]) => runCheck(fn)));
   const host = ascii(`cloudflare-workers ${env.CF_COLO || ""}`.trim(), 80);
   const account = env.TARGET_ACCOUNT ? { account: ascii(env.TARGET_ACCOUNT, 40) } : {};
-  return list.map(([service, op], i) => ({ v: 1, network: NETWORK, host, target: REGION, ...account, service, op,
+  const startedBy = { started_by: "cloudflare-cron" }; // this network is always started by its own Cloudflare timer
+  return list.map(([service, op], i) => ({ v: 1, network: NETWORK, host, target: REGION, ...account, ...startedBy, service, op,
     minute: iso(now, true), at: iso(now), ...results[i] }));
 }
 
@@ -135,11 +141,31 @@ export async function probeMinute(env, now) {
   return { name, records: sealed.length, seq };
 }
 
+// Ask GitHub to run the probe workflow. Independent of probing: a failure here never stops this network's checks.
+export async function dispatchGithub(env, now, fetchImpl = fetch) {
+  if (now.getUTCMinutes() % 5 !== 3) return "not a dispatch minute";
+  if (!env.GITHUB_DISPATCH_TOKEN || !env.DISPATCH_REPO) return "dispatch not configured";
+  try {
+    const r = await fetchImpl(`https://api.github.com/repos/${env.DISPATCH_REPO}/actions/workflows/probe.yml/dispatches`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.GITHUB_DISPATCH_TOKEN}`, Accept: "application/vnd.github+json",
+                 "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "outage-telemetry-dispatch" },
+      body: JSON.stringify({ ref: "main", inputs: { started_by: "cloudflare-cron" } }),
+      signal: AbortSignal.timeout(10000),
+    });
+    return r.ok ? "dispatched" : `dispatch failed: HTTP ${r.status}`;
+  } catch (e) {
+    return `dispatch failed: ${e.name}`;
+  }
+}
+
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
 
 export default {
   async scheduled(event, env, ctx) {
-    await probeMinute(env, new Date(event.scheduledTime));
+    const now = new Date(event.scheduledTime);
+    ctx.waitUntil(dispatchGithub(env, now).then((m) => console.log("github:", m)));
+    await probeMinute(env, now);
   },
 
   // Read-only feed for the GitHub run that copies results into the public data branch. Everything here is public anyway.

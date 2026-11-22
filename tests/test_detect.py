@@ -70,3 +70,11 @@ def test_rolling_rule_catches_a_partial_outage_the_minute_rule_misses():
     longest = lambda cfg: max([e["duration_min"] for e in detect(rs, cfg)["region"]], default=0)
     assert longest(CFG) < 60                                  # flickers: never reaches a 1-hour wait
     assert longest(rolling) >= 120                            # seen as one outage
+
+
+def test_a_minute_nobody_probed_is_unknown_not_up():
+    # fix 3: if a network's run never started, its missing minute can't vote "up"
+    rs = recs("github", m(0)) + recs("cloudflare", m(0)) + recs("cloudflare", m(1))
+    st = minute_states(rs, CFG)
+    assert st[m(0)]["s3"] == "up"
+    assert st[m(1)]["s3"] == "unknown"

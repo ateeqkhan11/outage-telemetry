@@ -14,6 +14,8 @@ One JSON object per line. One record = one check, one minute, one probe network.
 | `network` | Probe network: `github`, `azure`, `cloudflare`, `gcp`, `vps` |
 | `host` | Which machine or run did the probing |
 | `target` | AWS region probed (`us-east-1`) |
+| `account` | Optional. Name of the AWS test account this network calls (each network has its own) |
+| `started_by` | Optional. What started the run: `cloudflare-cron` (a Cloudflare timer, outside AWS and GitHub), `github-schedule`, `eventbridge` (reference probe only) or `manual` |
 | `service`, `op` | What was called: `control` (outside AWS), `s3`, `dynamodb`, `lambda`, `ec2`, `sts` |
 | `minute` | UTC minute the check belongs to (`YYYY-MM-DDTHH:MMZ`) |
 | `at` | UTC time the round of checks started, in milliseconds |

@@ -42,13 +42,22 @@ def where_am_i(network: str) -> str:
     return f"{network} {platform.node()}"[:80]
 
 
+def _label(text: str) -> str:
+    """Short printable-ASCII label (records refuse non-ASCII; a workflow input is user-supplied)."""
+    return "".join(c for c in text if 32 <= ord(c) < 127)[:60]
+
+
 def probe_minute(network: str, checks: List[chk.Check], control: chk.Check, now: float) -> List[dict]:
     """Run the control check and every AWS check in parallel; return unsealed records."""
     everything = [control] + checks
     with ThreadPoolExecutor(len(everything)) as ex:
         outcomes = list(ex.map(lambda c: chk.run_check(c[2]), everything))
     host = where_am_i(network)
-    extra = {"account": os.environ["PROBE_TARGET_ACCOUNT"]} if os.environ.get("PROBE_TARGET_ACCOUNT") else {}
+    extra = {}
+    if os.environ.get("PROBE_TARGET_ACCOUNT"):
+        extra["account"] = os.environ["PROBE_TARGET_ACCOUNT"]
+    if os.environ.get("PROBE_STARTED_BY"):                    # what started this run (fix 3: the scheduler is logged)
+        extra["started_by"] = _label(os.environ["PROBE_STARTED_BY"])
     return [dict(v=RECORD_VERSION, network=network, host=host, target=chk.TARGET_REGION, service=svc, op=op,
                  minute=_iso(now, minute=True), at=_iso(now), **extra, **out)
             for (svc, op, _), out in zip(everything, outcomes)]

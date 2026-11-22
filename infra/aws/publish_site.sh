@@ -10,4 +10,4 @@ chown -R root:root /srv/nimbus-site.new && chmod -R a+rX,go-w /srv/nimbus-site.n
 [ -d /srv/nimbus-site ] && mv /srv/nimbus-site /srv/nimbus-site.old
 mv /srv/nimbus-site.new /srv/nimbus-site
 rm -rf /srv/nimbus-site.old
-echo "website published from $(cd /opt/nimbus/src && git log --oneline -1)"
+echo "website published from $(runuser -u nimbus -- git -C /opt/nimbus/src log --oneline -1)"

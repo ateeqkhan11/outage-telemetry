@@ -43,8 +43,8 @@ www.$SITE, $ALIAS, www.$ALIAS {
 CADDY
 sed -i 's#^NIMBUS_BASE_URL=.*#NIMBUS_BASE_URL=https://$APP#' /etc/nimbus/env
 /usr/local/bin/caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile.new
-mv /etc/caddy/Caddyfile.new /etc/caddy/Caddyfile
-systemctl reload caddy; systemctl restart nimbus-app
+chmod 755 /etc/caddy && chmod 644 /etc/caddy/Caddyfile.new && mv /etc/caddy/Caddyfile.new /etc/caddy/Caddyfile
+systemctl reset-failed caddy || true; systemctl restart caddy; systemctl restart nimbus-app
 echo; cat /etc/caddy/Caddyfile"
 echo
 echo "Website: https://$SITE   App: https://$APP   (each works once its DNS points at this server)"

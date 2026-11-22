@@ -88,7 +88,7 @@ mkdir -p /var/lib/nimbus /etc/nimbus && chown nimbus:nimbus /var/lib/nimbus && c
 [ -d /opt/nimbus/venv ] || runuser -u nimbus -- python3.11 -m venv /opt/nimbus/venv
 runuser -u nimbus -- /opt/nimbus/venv/bin/pip install --quiet -r /opt/nimbus/src/app/requirements.txt
 if [ ! -f /etc/nimbus/env ]; then
-  umask 077
+  ( umask 077                       # only this file is private; a script-wide umask hid Caddy's config from Caddy
   cat > /etc/nimbus/env <<ENV
 NIMBUS_SECRET_KEY=\$(openssl rand -hex 32)
 NIMBUS_INSTANCE=/var/lib/nimbus
@@ -101,6 +101,7 @@ NIMBUS_SECURE_COOKIES=1
 NIMBUS_BACKUP_BUCKET=\$BUCKET
 PYTHONPATH=/opt/nimbus/src:/opt/nimbus/src/app
 ENV
+  )
   chgrp nimbus /etc/nimbus/env && chmod 640 /etc/nimbus/env
 fi
 cat > /usr/local/bin/nimbus-manage <<'SH'
@@ -179,13 +180,14 @@ if [ ! -x /usr/local/bin/caddy ]; then
   tar -xzf caddy_\${V}_linux_arm64.tar.gz caddy && install -m 755 caddy /usr/local/bin/caddy
   id caddy >/dev/null 2>&1 || useradd --system --home-dir /var/lib/caddy --create-home --shell /sbin/nologin caddy
 fi
-mkdir -p /etc/caddy
+mkdir -p /etc/caddy && chmod 755 /etc/caddy
 [ -f /etc/caddy/Caddyfile ] || cat > /etc/caddy/Caddyfile <<CADDY
 \$HOST {
 	encode gzip
 	reverse_proxy 127.0.0.1:8000
 }
 CADDY
+chmod 644 /etc/caddy/Caddyfile
 cat > /etc/systemd/system/caddy.service <<'UNIT'
 [Unit]
 Description=Caddy (HTTPS in front of the Nimbus Index app)

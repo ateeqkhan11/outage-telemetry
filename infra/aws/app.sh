@@ -172,7 +172,7 @@ UNIT
 
 # Caddy: HTTPS with automatic certificates (pinned release, checksum verified)
 if [ ! -x /usr/local/bin/caddy ]; then
-  V=2.8.4
+  V=2.11.9
   cd /tmp
   curl -fsSLO "https://github.com/caddyserver/caddy/releases/download/v\$V/caddy_\${V}_linux_arm64.tar.gz"
   curl -fsSLO "https://github.com/caddyserver/caddy/releases/download/v\$V/caddy_\${V}_checksums.txt"

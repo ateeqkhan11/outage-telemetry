@@ -1,0 +1,71 @@
+# Phrases that must never appear in marketing copy (site/, templates/public/, templates/email/).
+# One case-insensitive Python regular expression per line; blank lines and lines starting with # are ignored.
+# The Methodology page is checked against these too, after removing phrases in methodology-allow.txt.
+# Founders' rule: the only marketing claim is the approved line (see README / PRD section 8.1).
+
+# Multi-network or independent-network coverage
+multi[- ]?network
+multiple (probe )?networks
+independent[- ](probe[- ])?networks?
+independent compan(y|ies)
+independent (sources?|vantage points?|observers?|measurements?|operators?)
+\b(two|three|several|many|\d+) independent\b
+independently (verified|measured|monitored|confirmed)
+
+# Tamper-evident, signed or verifiable records
+tamper[- ]?(evident|proof|resistant)
+\bsigned\b
+\bsignatures?\b
+\bcryptograph\w*
+\bimmutable\b
+\bverif(y|ies|ied|iable|iability|ication)\b
+\bprovable\b
+\bauditable\b
+
+# Verified or live monitoring
+\bmonitor(s|ed|ing)?\b
+\blive (data|status|feed|tracking|dashboard|view)\b
+\breal[- ]?time\b
+\b24/7\b
+\baround the clock\b
+
+# Uptime, backtest or alert-timing figures
+\buptime\b
+\b\d{2}(\.\d+)?\s?% (availability|accuracy|precision|recall|detection)
+\b99\.\d+\s?%
+\bback-?test\w*
+\b(alerts?|alerted|alerting|detects?|detected|detection|notif\w*)\b[^.]{0,40}\b(within|in under|in less than)\s+\d+
+\b\d+\s*(s|sec|seconds|mins?|minutes|hours?)\s+(faster|earlier|sooner|ahead of|before (the )?(status page|aws|the provider))
+\bfaster than (the )?(status page|aws|the provider)
+
+# Trigger readiness
+trigger[- ]read(y|iness)
+\bready (to|for) (trigger|underwrit\w*|bind\w*|production|use in polic\w*)
+\bproduction[- ]ready\b
+\bpolicy[- ]ready\b
+\bbindable\b
+
+# SOC or other certification claims
+\bSOC ?[123]?\b
+\bISO ?27001\b
+\bcertified\b
+\bcertification\b
+\baccredited\b
+\bcompliant\b
+
+# Fabricated customers, logos, quotes or prices
+\btrusted by\b
+\bused by (leading|top|major)\b
+\b(our|existing) (customers|clients)\b
+\b(customers|clients) include\b
+\btestimonials?\b
+\bcase stud(y|ies)\b
+\bas seen in\b
+[$£€]\s?\d
+\bper (month|year|seat|policy)\b
+\bpricing (plans?|tiers?)\b
+
+# Never criticise Parametrix
+\bunlike parametrix\b
+\bbetter than parametrix\b
+\bparametrix\W+(fails?|is wrong|gets it wrong|is flawed|is unreliable|is slow|misses)\b

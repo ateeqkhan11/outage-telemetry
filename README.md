@@ -1,5 +1,8 @@
 # outage-telemetry
 
+> The Nimbus Index app (app.nimbusindex.com) and website (nimbusindex.com) now live in a private repository. This
+> repository keeps the probes, the public data branch, the signing keys and the methodology rules.
+
 Independent, tamper-evident measurements of whether AWS us-east-1 is up.
 
 Probes on separate networks call five core AWS services every minute. Every result is signed, and each result is

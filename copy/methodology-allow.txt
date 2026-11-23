@@ -1,7 +1,0 @@
-# Reviewed method-description phrases allowed on the Methodology page only (site/methodology/).
-# One case-insensitive Python regular expression per line. Each matching phrase is removed before the Methodology
-# page is checked against banned.txt, so a phrase allowed here must describe the method as designed, never coverage.
-# Founder confirmation of this exception is still open; keep the list short and specific.
-
-# The two-company rule (rules file "definitions" descriptions)
-\b(at least )?(\d+|two|three|four) independent companies\b

@@ -1,7 +1,0 @@
-{% extends "base.html" %}{% block title %}Dashboard · Nimbus Index{% endblock %}
-{% block band %}{% include "_status_band.html" %}{% endblock %}
-{% block body %}
-{% if welcome %}<p class="alert ok">You're in. This is the live status; <a href="{{ url_for('web.history_page') }}">History</a> shows months at a glance, <a href="{{ url_for('web.reports_page') }}">Reports</a> any period in detail, and <a href="{{ url_for('web.api_access') }}">API access</a> gets the same data into your systems.</p>{% endif %}
-{% include "_status_body.html" %}
-<script src="{{ url_for('web.shared', name='dashboard.js') }}" data-src="{{ url_for('web.status_json') }}"></script>
-{% endblock %}

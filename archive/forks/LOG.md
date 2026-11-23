@@ -574673,3 +574673,11 @@ A probe started twice in one minute; both copies signed records from the same ch
 - 2026-11-23T15:55Z moved aws/2026-11-23/1551.jsonl: 36 records, seq 794557-794592, at 2026-11-23T15:51:14.819Z
 - 2026-11-23T15:55Z moved aws/2026-11-23/1552.jsonl: 36 records, seq 794593-794628, at 2026-11-23T15:52:15.543Z
 - 2026-11-23T15:55Z moved aws/2026-11-23/1553.jsonl: 36 records, seq 794629-794664, at 2026-11-23T15:53:14.950Z
+- 2026-11-23T18:45Z moved cloudflare/2026-11-23/1836.jsonl: 36 records, seq 611857-611892, at 2026-11-23T18:36:07.827Z
+- 2026-11-23T18:45Z moved cloudflare/2026-11-23/1837.jsonl: 36 records, seq 611893-611928, at 2026-11-23T18:37:07.827Z
+- 2026-11-23T18:45Z moved cloudflare/2026-11-23/1838.jsonl: 36 records, seq 611929-611964, at 2026-11-23T18:38:07.827Z
+- 2026-11-23T18:45Z moved cloudflare/2026-11-23/1839.jsonl: 36 records, seq 611965-612000, at 2026-11-23T18:39:07.827Z
+- 2026-11-23T18:45Z moved cloudflare/2026-11-23/1840.jsonl: 36 records, seq 612001-612036, at 2026-11-23T18:40:07.827Z
+- 2026-11-23T18:45Z moved cloudflare/2026-11-23/1841.jsonl: 36 records, seq 612037-612072, at 2026-11-23T18:41:07.827Z
+- 2026-11-23T18:45Z moved cloudflare/2026-11-23/1842.jsonl: 36 records, seq 612073-612108, at 2026-11-23T18:42:07.827Z
+- 2026-11-23T18:45Z moved cloudflare/2026-11-23/1843.jsonl: 36 records, seq 612109-612144, at 2026-11-23T18:43:07.827Z
